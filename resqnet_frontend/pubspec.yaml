@@ -1,0 +1,28 @@
+name: resqnet_frontend
+description: "ResQNet Emergency Application"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.3.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  flutter_secure_storage: ^10.0.0
+  country_picker: ^2.0.25
+  file_picker: ^8.0.0
+  geolocator: ^14.0.2
+  geocoding: ^2.1.1   # 🔥 ADDED
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

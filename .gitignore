@@ -1,0 +1,13 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/uploads/
+
+# Flutter
+resqnet_frontend/build/
+resqnet_frontend/.dart_tool/
+resqnet_frontend/.idea/
+
+# System
+.DS_Store
+Thumbs.db

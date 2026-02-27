@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Rejected Registrations</title>
+
+<style>
+body { font-family: Arial; background:#f4f6f9; margin:0; }
+
+/* HEADER */
+header {
+    background:#007bff;
+    color:white;
+    padding:20px;
+    position:relative;
+}
+
+.back {
+    position:absolute;
+    left:20px;
+    top:22px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+/* CONTAINER */
+.container {
+    width:85%;
+    margin:30px auto;
+}
+
+/* TABS + SEARCH ROW */
+.tabs-row {
+    display:flex;
+    align-items:center;
+    gap:30px;
+    margin-bottom:25px;
+}
+
+/* TABS */
+.tabs { display:flex; gap:15px; }
+
+.tab {
+    padding:10px 25px;
+    border-radius:25px;
+    cursor:pointer;
+    font-weight:600;
+    background:#e9ecef;
+    color:#555;
+    transition:0.3s;
+}
+
+.tab:hover { background:#d6d8db; }
+
+.tab.active {
+    background:#dc3545;
+    color:white;
+}
+
+/* SEARCH */
+.search-box { position:relative; }
+
+.search-box input {
+    padding:8px 15px 8px 38px;
+    border-radius:20px;
+    border:1px solid #ccc;
+    width:260px;
+    outline:none;
+    font-size:14px;
+}
+
+.search-box input:focus { border-color:#dc3545; }
+
+.search-icon {
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:16px;
+}
+
+/* CARD */
+.card {
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* DOCUMENT BUTTONS */
+.doc-btn {
+    padding:6px 12px;
+    border:none;
+    cursor:pointer;
+    margin:6px 6px 6px 0;
+    border-radius:5px;
+    background:#6c757d;
+    color:white;
+    font-size:13px;
+}
+
+/* NO RESULTS */
+.no-results {
+    text-align:center;
+    margin-top:40px;
+    font-size:16px;
+    color:#777;
+}
+
+/* MODAL */
+.modal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+}
+
+.modal-content {
+    background:white;
+    margin:5% auto;
+    padding:20px;
+    width:70%;
+    border-radius:8px;
+    text-align:center;
+    position:relative;
+}
+
+.modal img {
+    max-width:100%;
+    max-height:500px;
+    object-fit:contain;
+}
+
+.close {
+    position:absolute;
+    right:15px;
+    top:10px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="back" onclick="goBack()">← Back</div>
+<h2 style="text-align:center;">Rejected Registrations</h2>
+</header>
+
+<div class="container">
+
+<div class="tabs-row">
+
+    <div class="tabs">
+        <div class="tab active" onclick="showHospitals()" id="hospitalTab">
+            🏥 Hospitals
+        </div>
+        <div class="tab" onclick="showAmbulances()" id="ambulanceTab">
+            🚑 Ambulances
+        </div>
+    </div>
+
+    <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"
+                stroke="#999"
+                stroke-width="2"
+                fill="none"></circle>
+            <line x1="16" y1="16"
+                  x2="21" y2="21"
+                  stroke="#999"
+                  stroke-width="2"
+                  stroke-linecap="round"></line>
+        </svg>
+
+        <input type="text"
+               id="searchInput"
+               placeholder="Search..."
+               onkeyup="filterData()">
+    </div>
+
+</div>
+
+<div id="hospitalSection"></div>
+<div id="ambulanceSection" style="display:none;"></div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeModal()">✖</span>
+<img id="previewImage">
+</div>
+</div>
+
+<script>
+
+const BASE_URL="http://localhost:5000";
+
+let hospitalData = [];
+let ambulanceData = [];
+
+function goBack(){
+    window.location.href="dashboard.html";
+}
+
+function showHospitals(){
+    hospitalSection.style.display="block";
+    ambulanceSection.style.display="none";
+    hospitalTab.classList.add("active");
+    ambulanceTab.classList.remove("active");
+    searchInput.value="";
+    renderHospitals(hospitalData);
+}
+
+function showAmbulances(){
+    hospitalSection.style.display="none";
+    ambulanceSection.style.display="block";
+    ambulanceTab.classList.add("active");
+    hospitalTab.classList.remove("active");
+    searchInput.value="";
+    renderAmbulances(ambulanceData);
+}
+
+function openFile(file){
+    previewImage.src = BASE_URL + "/uploads/" + file;
+    modal.style.display="block";
+}
+
+function closeModal(){
+    modal.style.display="none";
+}
+
+function renderHospitals(data){
+    hospitalSection.innerHTML="";
+    if(data.length === 0){
+        hospitalSection.innerHTML =
+        `<div class="no-results">No results found</div>`;
+        return;
+    }
+
+    data.forEach(x=>{
+        hospitalSection.innerHTML+=`
+        <div class="card">
+            <h3>${x.hospitalName}</h3>
+            <p><strong>Email:</strong> ${x.email}</p>
+            <p><strong>Phone:</strong> ${x.phone}</p>
+            <p><strong>Registration Number:</strong> ${x.registrationNumber}</p>
+            <p><strong>Address:</strong> ${x.address}</p>
+
+            <button class="doc-btn"
+                onclick="openFile('${x.certificateFilePath}')">
+                Registration Certificate
+            </button>
+        </div>`;
+    });
+}
+
+function renderAmbulances(data){
+    ambulanceSection.innerHTML="";
+    if(data.length === 0){
+        ambulanceSection.innerHTML =
+        `<div class="no-results">No results found</div>`;
+        return;
+    }
+
+    data.forEach(x=>{
+        ambulanceSection.innerHTML+=`
+        <div class="card">
+            <h3>${x.fullName}</h3>
+            <p><strong>Email:</strong> ${x.email}</p>
+            <p><strong>Phone:</strong> ${x.phone}</p>
+            <p><strong>Vehicle Number:</strong> ${x.vehicleNumber}</p>
+            <p><strong>License Number:</strong> ${x.licenseNumber}</p>
+
+            <button class="doc-btn"
+                onclick="openFile('${x.rcFilePath}')">
+                RC Document
+            </button>
+
+            <button class="doc-btn"
+                onclick="openFile('${x.licenseFilePath}')">
+                Driving License
+            </button>
+
+            <button class="doc-btn"
+                onclick="openFile('${x.permitFilePath}')">
+                Vehicle Permit
+            </button>
+        </div>`;
+    });
+}
+
+function filterData(){
+    const keyword = searchInput.value.toLowerCase();
+
+    if(hospitalSection.style.display !== "none"){
+        const filtered = hospitalData.filter(x =>
+            x.hospitalName.toLowerCase().includes(keyword) ||
+            x.email.toLowerCase().includes(keyword) ||
+            x.phone.includes(keyword) ||
+            x.registrationNumber.toLowerCase().includes(keyword)
+        );
+        renderHospitals(filtered);
+    } else {
+        const filtered = ambulanceData.filter(x =>
+            x.fullName.toLowerCase().includes(keyword) ||
+            x.email.toLowerCase().includes(keyword) ||
+            x.phone.includes(keyword) ||
+            x.vehicleNumber.toLowerCase().includes(keyword)
+        );
+        renderAmbulances(filtered);
+    }
+}
+
+async function load(){
+    const h = await fetch(`${BASE_URL}/api/admin/hospitals/rejected`);
+    const a = await fetch(`${BASE_URL}/api/admin/ambulances/rejected`);
+
+    hospitalData = (await h.json()).hospitals;
+    ambulanceData = (await a.json()).ambulances;
+
+    renderHospitals(hospitalData);
+    renderAmbulances(ambulanceData);
+}
+
+load();
+</script>
+
+</body>
+</html>

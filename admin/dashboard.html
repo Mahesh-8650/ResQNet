@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ResQNet Admin Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body { 
+    font-family: Arial; 
+    background:#f4f6f9; 
+    margin:0; 
+}
+
+header {
+    background:#007bff;
+    color:white;
+    padding:20px;
+    text-align:center;
+    position:relative;
+}
+
+.logout-btn {
+    position:absolute;
+    right:20px;
+    top:20px;
+    padding:6px 14px;
+    border:1px solid white;
+    background:transparent;
+    color:white;
+    cursor:pointer;
+    border-radius:4px;
+    font-size:14px;
+}
+
+.logout-btn:hover {
+    background:white;
+    color:#007bff;
+}
+
+.container {
+    text-align:center;
+    margin-top:50px;
+}
+
+.message {
+    font-size:17px;
+    color:#444;
+    margin-bottom:35px;
+}
+
+/* Analytics Section */
+.analytics {
+    display:flex;
+    justify-content:center;
+    gap:80px;
+    margin-bottom:50px;
+}
+
+.chart-box {
+    width:300px;
+}
+
+button {
+    padding:15px 35px;
+    margin:15px;
+    font-size:16px;
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
+    color:white;
+}
+
+.pending-btn { background:#f0ad4e; }
+.approved-btn { background:#5cb85c; }
+.rejected-btn { background:#d9534f; }
+
+button:hover { opacity:0.9; }
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>ResQNet Admin Dashboard</h2>
+
+    <button class="logout-btn"
+        onclick="window.location.href='login.html'">
+        Logout
+    </button>
+</header>
+
+<div class="container">
+
+    <div class="message">
+        Select a section below to manage hospital and ambulance registrations.
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="analytics">
+
+        <div class="chart-box">
+            <h3>🏥 Hospitals</h3>
+            <canvas id="hospitalChart"></canvas>
+        </div>
+
+        <div class="chart-box">
+            <h3>🚑 Ambulances</h3>
+            <canvas id="ambulanceChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Buttons -->
+    <button class="pending-btn" onclick="goToPending()">
+        Pending
+    </button>
+
+    <button class="approved-btn" onclick="goToApproved()">
+        Approved
+    </button>
+
+    <button class="rejected-btn" onclick="goToRejected()">
+        Rejected
+    </button>
+
+</div>
+
+<script>
+
+const BASE_URL = "http://localhost:5000";
+
+function goToPending(){ window.location.href="pending.html"; }
+function goToApproved(){ window.location.href="approved.html"; }
+function goToRejected(){ window.location.href="rejected.html"; }
+
+async function fetchCounts(type) {
+
+    const pending = await fetch(`${BASE_URL}/api/admin/${type}/pending`);
+    const approved = await fetch(`${BASE_URL}/api/admin/${type}/approved`);
+    const rejected = await fetch(`${BASE_URL}/api/admin/${type}/rejected`);
+
+    return {
+        pending: (await pending.json()).count,
+        approved: (await approved.json()).count,
+        rejected: (await rejected.json()).count
+    };
+}
+
+async function loadCharts() {
+
+    const hospitalData = await fetchCounts("hospitals");
+    const ambulanceData = await fetchCounts("ambulances");
+
+    new Chart(document.getElementById("hospitalChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Pending", "Approved", "Rejected"],
+            datasets: [{
+                data: [
+                    hospitalData.pending,
+                    hospitalData.approved,
+                    hospitalData.rejected
+                ],
+                backgroundColor: [
+                    "#f0ad4e",
+                    "#5cb85c",
+                    "#d9534f"
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("ambulanceChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Pending", "Approved", "Rejected"],
+            datasets: [{
+                data: [
+                    ambulanceData.pending,
+                    ambulanceData.approved,
+                    ambulanceData.rejected
+                ],
+                backgroundColor: [
+                    "#f0ad4e",
+                    "#5cb85c",
+                    "#d9534f"
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
+
+}
+
+loadCharts();
+
+</script>
+
+</body>
+</html>
