@@ -25,7 +25,7 @@ const citizenEmergencySchema = new mongoose.Schema(
 
     selectedBy: {
       type: String,
-      enum: ["user", "driver"],
+      enum: ["user", "system"],
       default: null,
     },
 
