@@ -4,6 +4,7 @@ dotenv.config(); // MUST be first
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 import connectDB from "./config/db.js";
@@ -11,6 +12,25 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
+
+/* ===================================================== */
+/* ================= FIX FOR __dirname ================= */
+/* ===================================================== */
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* ===================================================== */
+/* ================= CREATE UPLOADS FOLDER ============= */
+/* ===================================================== */
+
+// 🔥 VERY IMPORTANT FOR RENDER
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("Uploads folder created");
+}
 
 /* ===================================================== */
 /* ================= MIDDLEWARE ======================== */
@@ -23,12 +43,8 @@ app.use(express.json());
 /* ================= STATIC FILES ====================== */
 /* ===================================================== */
 
-// Fix for ES module (__dirname not available directly)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // 🔥 Serve uploads folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(uploadDir));
 
 /* ===================================================== */
 /* ================= DATABASE ========================== */
