@@ -790,4 +790,37 @@ router.get("/hospital/:id/completed", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+// 🚑 Update Ambulance Duty Status
+router.put("/update-duty/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAvailable } = req.body;
+
+    const ambulance = await Ambulance.findById(id);
+
+    if (!ambulance) {
+      return res.status(404).json({ message: "Ambulance not found" });
+    }
+
+    ambulance.isAvailable = isAvailable;
+
+    // 🔥 Important rule
+    if (!isAvailable) {
+      ambulance.isBusy = false;
+    }
+
+    await ambulance.save();
+
+    res.json({
+      message: "Duty updated successfully",
+      ambulance,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;
