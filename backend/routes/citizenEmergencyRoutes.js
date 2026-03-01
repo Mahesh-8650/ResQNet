@@ -37,14 +37,14 @@ router.post("/create", async (req, res) => {
 
     await emergency.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Emergency created successfully",
       emergency,
     });
 
   } catch (error) {
     console.error("Create emergency error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
@@ -76,6 +76,59 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
   } catch (error) {
     console.error("Fetch ambulance emergency error:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 UPDATE EMERGENCY STATUS */
+/* ===================================================== */
+
+router.put("/update-status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "assigned",
+      "pickup",
+      "enroute",
+      "at_hospital",
+      "completed",
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status value",
+      });
+    }
+
+    const emergency = await CitizenEmergency.findById(id);
+
+    if (!emergency) {
+      return res.status(404).json({
+        message: "Emergency not found",
+      });
+    }
+
+    emergency.status = status;
+
+    // If case completed → free ambulance
+    if (status === "completed") {
+      emergency.ambulanceId = null;
+    }
+
+    await emergency.save();
+
+    return res.status(200).json({
+      message: "Status updated successfully",
+      emergency,
+    });
+
+  } catch (error) {
+    console.error("Update status error:", error);
     return res.status(500).json({
       message: "Server error",
     });
