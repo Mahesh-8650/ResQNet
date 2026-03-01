@@ -1,5 +1,7 @@
 import express from "express";
 import CitizenEmergency from "../models/CitizenEmergency.js";
+import Ambulance from "../models/Ambulance.js";
+import Hospital from "../models/Hospital.js";
 
 const router = express.Router();
 
@@ -23,6 +25,18 @@ router.post("/create", async (req, res) => {
       });
     }
 
+    let assignedHospitalId = hospitalId || null;
+
+    /* ================= AUTO ASSIGN HOSPITAL ================= */
+
+    if (!hospitalId) {
+      const hospitals = await Hospital.find();
+
+      if (hospitals.length > 0) {
+        assignedHospitalId = hospitals[0]._id; // simple nearest logic placeholder
+      }
+    }
+
     const emergency = new CitizenEmergency({
       patientName,
       emergencyType,
@@ -30,8 +44,8 @@ router.post("/create", async (req, res) => {
         latitude,
         longitude,
       },
-      hospitalId: hospitalId || null,
-      selectedBy: hospitalId ? "user" : null,
+      hospitalId: assignedHospitalId,
+      selectedBy: hospitalId ? "user" : "system",
       status: "pending",
     });
 
@@ -60,8 +74,10 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
     const emergency = await CitizenEmergency.findOne({
       ambulanceId,
-      status: { $in: ["assigned", "pickup", "enroute", "at_hospital"] },
-    }).sort({ createdAt: -1 });
+      status: "assigned",
+    })
+      .populate("hospitalId")
+      .sort({ createdAt: -1 });
 
     if (!emergency) {
       return res.status(200).json({
@@ -91,13 +107,7 @@ router.put("/update-status/:id", async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const allowedStatuses = [
-      "assigned",
-      "pickup",
-      "enroute",
-      "at_hospital",
-      "completed",
-    ];
+    const allowedStatuses = ["assigned", "completed"];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
@@ -115,8 +125,12 @@ router.put("/update-status/:id", async (req, res) => {
 
     emergency.status = status;
 
-    // If case completed → free ambulance
     if (status === "completed") {
+      await Ambulance.findByIdAndUpdate(
+        emergency.ambulanceId,
+        { isBusy: false }
+      );
+
       emergency.ambulanceId = null;
     }
 
