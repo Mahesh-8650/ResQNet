@@ -791,7 +791,10 @@ router.get("/hospital/:id/completed", async (req, res) => {
   }
 });
 
-// 🚑 Update Ambulance Duty Status
+/* ===================================================== */
+/* ============ UPDATE AMBULANCE DUTY STATUS =========== */
+/* ===================================================== */
+
 router.put("/update-duty/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -805,7 +808,7 @@ router.put("/update-duty/:id", async (req, res) => {
 
     ambulance.isAvailable = isAvailable;
 
-    // 🔥 Important rule
+    // 🚨 If OFF duty → also reset busy
     if (!isAvailable) {
       ambulance.isBusy = false;
     }
@@ -818,9 +821,61 @@ router.put("/update-duty/:id", async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("UPDATE DUTY ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+/* ===================================================== */
+/* ============ UPDATE AMBULANCE LOCATION ============== */
+/* ===================================================== */
+
+router.put("/update-location/:id", async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    const ambulance = await Ambulance.findById(req.params.id);
+
+    if (!ambulance) {
+      return res.status(404).json({ message: "Ambulance not found" });
+    }
+
+    ambulance.currentLocation = {
+      type: "Point",
+      coordinates: [Number(longitude), Number(latitude)],
+    };
+
+    await ambulance.save();
+
+    res.json({ message: "Location updated successfully" });
+
+  } catch (error) {
+    console.error("UPDATE LOCATION ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+/* ===================================================== */
+/* ============ GET AMBULANCE DETAILS ================== */
+/* ===================================================== */
+
+router.get("/ambulance/:id", async (req, res) => {
+  try {
+    const ambulance = await Ambulance.findById(req.params.id);
+
+    if (!ambulance) {
+      return res.status(404).json({ message: "Ambulance not found" });
+    }
+
+    res.json(ambulance);
+
+  } catch (error) {
+    console.error("GET AMBULANCE ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 export default router;
