@@ -14,10 +14,9 @@ router.post("/create", async (req, res) => {
       emergencyType,
       latitude,
       longitude,
-      hospitalId, // optional
+      hospitalId,
     } = req.body;
 
-    // Basic validation
     if (!patientName || !emergencyType || !latitude || !longitude) {
       return res.status(400).json({
         message: "Missing required fields",
@@ -46,6 +45,38 @@ router.post("/create", async (req, res) => {
   } catch (error) {
     console.error("Create emergency error:", error);
     res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 GET ACTIVE EMERGENCY FOR AMBULANCE */
+/* ===================================================== */
+
+router.get("/ambulance/:ambulanceId", async (req, res) => {
+  try {
+    const { ambulanceId } = req.params;
+
+    const emergency = await CitizenEmergency.findOne({
+      ambulanceId,
+      status: { $in: ["assigned", "pickup", "enroute", "at_hospital"] },
+    }).sort({ createdAt: -1 });
+
+    if (!emergency) {
+      return res.status(200).json({
+        hasEmergency: false,
+      });
+    }
+
+    return res.status(200).json({
+      hasEmergency: true,
+      emergency,
+    });
+
+  } catch (error) {
+    console.error("Fetch ambulance emergency error:", error);
+    return res.status(500).json({
       message: "Server error",
     });
   }
