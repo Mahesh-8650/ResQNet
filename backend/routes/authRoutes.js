@@ -402,7 +402,7 @@ router.post("/send-otp", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone, otp, fcmToken } = req.body;
 
     const record = await Otp.findOne({ phone });
 
@@ -484,6 +484,12 @@ router.post("/verify-otp", async (req, res) => {
 
     if (!account)
       return res.status(404).json({ message: "Account not found" });
+    if(account.role === "ambulance" && fcmToken){
+      await
+      Ambulance.findByIdAndUpdate(account._id,{
+        fcmToken: fcmToken,
+      });
+    }
 
     const token = jwt.sign(
       { id: account._id, role: account.role },

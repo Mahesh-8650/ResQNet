@@ -54,14 +54,22 @@ const ambulanceSchema = new mongoose.Schema(
       },
     },
 
+    // 🟢 Whether ambulance is online/available
     isAvailable: {
       type: Boolean,
       default: false,
     },
 
+    // 🔴 Whether ambulance is currently handling a case
     isBusy: {
       type: Boolean,
       default: false,
+    },
+
+    // 🔔 Firebase Cloud Messaging Token
+    fcmToken: {
+      type: String,
+      default: null,
     },
 
     rcFilePath: {
