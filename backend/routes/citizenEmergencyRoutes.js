@@ -6,7 +6,7 @@ import Hospital from "../models/Hospital.js";
 const router = express.Router();
 
 /* ===================================================== */
-/* 🚑 CREATE CITIZEN EMERGENCY */
+/* 🚑 CREATE CITIZAN EMERGENCY */
 /* ===================================================== */
 
 router.post("/create", async (req, res) => {
@@ -31,11 +31,12 @@ router.post("/create", async (req, res) => {
 
     if (!hospitalId) {
       const hospitals = await Hospital.find();
-
       if (hospitals.length > 0) {
-        assignedHospitalId = hospitals[0]._id; // simple nearest logic placeholder
+        assignedHospitalId = hospitals[0]._id;
       }
     }
+
+    /* ================= CREATE EMERGENCY ================= */
 
     const emergency = new CitizenEmergency({
       patientName,
@@ -50,6 +51,23 @@ router.post("/create", async (req, res) => {
     });
 
     await emergency.save();
+
+    /* ================= AUTO ASSIGN AMBULANCE ================= */
+
+    const availableAmbulance = await Ambulance.findOne({
+      isAvailable: true,
+      isBusy: false,
+    });
+
+    if (availableAmbulance) {
+      emergency.ambulanceId = availableAmbulance._id;
+      emergency.status = "assigned";
+
+      availableAmbulance.isBusy = true;
+
+      await availableAmbulance.save();
+      await emergency.save();
+    }
 
     return res.status(201).json({
       message: "Emergency created successfully",
