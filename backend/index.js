@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import citizenEmergencyRoutes from "./routes/citizenEmergencyRoutes.js";
 
 const app = express();
 
@@ -24,7 +25,7 @@ const __dirname = path.dirname(__filename);
 /* ================= CREATE UPLOADS FOLDER ============= */
 /* ===================================================== */
 
-// 🔥 VERY IMPORTANT FOR RENDER
+// 🔥 IMPORTANT FOR RENDER
 const uploadDir = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadDir)) {
@@ -43,7 +44,6 @@ app.use(express.json());
 /* ================= STATIC FILES ====================== */
 /* ===================================================== */
 
-// 🔥 Serve uploads folder
 app.use("/uploads", express.static(uploadDir));
 
 /* ===================================================== */
@@ -58,6 +58,7 @@ connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/citizen-emergency", citizenEmergencyRoutes);
 
 /* ===================================================== */
 /* ================= TEST ROUTE ======================== */
