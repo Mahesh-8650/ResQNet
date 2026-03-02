@@ -12,8 +12,10 @@ import Ambulance from "../models/Ambulance.js";
 import Otp from "../models/Otp.js";
 import upload from "../middleware/upload.js";
 import Admin from "../models/Admin.js";
-import EmergencyRequest from "../models/EmergencyRequest.js";
+// import EmergencyRequest from "../models/EmergencyRequest.js";
+// import EmergencyRequest from "../models/CitizenEmergency.js";
 import mongoose from "mongoose";
+import CitizenEmergency from "../models/CitizenEmergency.js";
 
 const router = express.Router();
 
@@ -659,9 +661,9 @@ router.get("/hospital/:id/requests", async (req, res) => {
     const hospitalCoords = hospital.location?.coordinates;
 
     // 2️⃣ Get pending requests
-    const requests = await EmergencyRequest.find({
+    const requests = await CitizenEmergency.find({
       hospitalId: hospitalId,
-      status: "pending",
+      status: "assigned",
     })
       .populate(
         "ambulanceId",
@@ -776,7 +778,7 @@ router.get("/hospital/:id/completed", async (req, res) => {
   try {
     const hospitalId = new mongoose.Types.ObjectId(req.params.id);
 
-    const completedRequests = await EmergencyRequest.find({
+    const completedRequests = await CitizenEmergency.find({
       hospitalId: hospitalId,
       status: "completed",
     })
