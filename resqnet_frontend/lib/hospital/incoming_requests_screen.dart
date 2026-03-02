@@ -19,7 +19,7 @@ class IncomingRequestsScreen extends StatefulWidget {
 class _IncomingRequestsScreenState
     extends State<IncomingRequestsScreen> {
 
-  final String baseUrl = "http://192.168.1.56:5000";
+  final String baseUrl = "https://resqnet-backend-1xe3.onrender.com";
 
   bool isLoading = true;
   List requests = [];

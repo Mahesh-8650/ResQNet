@@ -750,17 +750,29 @@ router.get("/hospital/:id/requests", async (req, res) => {
 /* ========== MARK REQUEST AS COMPLETED =============== */
 /* ===================================================== */
 
+/* ===================================================== */
+/* ========== MARK REQUEST AS COMPLETED =============== */
+/* ===================================================== */
+
 router.put("/hospital/request/:id/complete", async (req, res) => {
   try {
     const requestId = req.params.id;
 
-    const request = await EmergencyRequest.findById(requestId);
+    const request = await CitizenEmergency.findById(requestId);
 
     if (!request) {
       return res.status(404).json({ message: "Request not found" });
     }
 
     request.status = "completed";
+
+    // 🚑 Free ambulance when completed
+    if (request.ambulanceId) {
+      await Ambulance.findByIdAndUpdate(request.ambulanceId, {
+        isBusy: false,
+      });
+    }
+
     await request.save();
 
     return res.json({ message: "Marked as completed" });

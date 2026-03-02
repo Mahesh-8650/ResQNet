@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://192.168.1.56:5000/api/auth/send-otp"),
+        Uri.parse("https://resqnet-backend-1xe3.onrender.com/api/auth/send-otp"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "phone": fullPhone,

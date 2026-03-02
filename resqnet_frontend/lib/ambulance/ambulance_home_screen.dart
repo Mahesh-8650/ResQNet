@@ -76,7 +76,7 @@ class _AmbulanceHomeScreenState
 
   void _startAutoRefresh() {
     _refreshTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) {
+        Timer.periodic(const Duration(seconds: 3), (_) {
       _fetchAmbulanceStatus();
       _checkForAssignedEmergency();
     });
@@ -90,22 +90,17 @@ class _AmbulanceHomeScreenState
         Uri.parse("$baseUrl/api/auth/ambulance/${widget.ambulanceId}"),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode != 200) return;
 
-        // 🔴 If currently busy, do NOT override availability
-        if (isBusy) {
-          setState(() {
-            isBusy = true;
-          });
-          return;
-        }
+      final data = jsonDecode(response.body);
 
-        setState(() {
-          isAvailable = data["isAvailable"];
-          isBusy = data["isBusy"];
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        isAvailable = data["isAvailable"] ?? isAvailable;
+        isBusy = data["isBusy"] ?? isBusy;
+      });
+
     } catch (_) {}
   }
 
@@ -113,7 +108,6 @@ class _AmbulanceHomeScreenState
 
   Future<void> _updateDuty(bool value) async {
 
-    // 🔴 Prevent OFF when busy
     if (isBusy && value == false) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -125,25 +119,30 @@ class _AmbulanceHomeScreenState
       return;
     }
 
+    // 🔥 Update immediately
+    setState(() {
+      isAvailable = value;
+    });
+
     try {
-      final response = await http.put(
+      await http.put(
         Uri.parse("$baseUrl/api/auth/update-duty/${widget.ambulanceId}"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"isAvailable": value}),
       );
 
-      if (response.statusCode == 200) {
-        setState(() {
-          isAvailable = value;
-        });
-
-        if (value) {
-          _startTracking();
-        } else {
-          _stopTracking();
-        }
+      if (value) {
+        _startTracking();
+      } else {
+        _stopTracking();
       }
-    } catch (_) {}
+
+    } catch (_) {
+      // rollback if failed
+      setState(() {
+        isAvailable = !value;
+      });
+    }
   }
 
   /* ================= TRACKING ================= */
@@ -214,112 +213,120 @@ class _AmbulanceHomeScreenState
       bool enabled =
           await Geolocator.isLocationServiceEnabled();
 
-      if (!enabled && isGpsActive) {
-        setState(() => isGpsActive = false);
-      }
+      if (!mounted) return;
 
-      if (enabled && !isGpsActive) {
-        setState(() => isGpsActive = true);
-      }
+      setState(() {
+        isGpsActive = enabled;
+      });
     });
   }
 
   /* ================= EMERGENCY CHECK ================= */
 
   Future<void> _checkForAssignedEmergency() async {
-  if (!isAvailable) return;
 
-  try {
-    final response = await http.get(
-      Uri.parse(
-        "$baseUrl/api/citizen-emergency/ambulance/${widget.ambulanceId}",
-      ),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "$baseUrl/api/citizen-emergency/ambulance/${widget.ambulanceId}",
+        ),
+      );
 
-    if (response.statusCode == 200) {
+      if (response.statusCode != 200) return;
+
       final data = jsonDecode(response.body);
 
-      if (data["hasEmergency"] == true) {
-        final emergency = data["emergency"];
-        final status = emergency["status"];
-
-        // 🚑 If OFFERED → show dialog
-        if (status == "offered" && !_isOfferDialogShowing) {
-          _isOfferDialogShowing = true;
-          _showOfferDialog(emergency);
-        }
-
-        // 🚑 If ASSIGNED → mark busy
-        if (status == "assigned") {
+      if (!data["hasEmergency"]) {
+        if (activeEmergency != null) {
           setState(() {
-            isBusy = true;
-            activeEmergency = emergency;
+            activeEmergency = null;
+            isBusy = false;
           });
         }
-
-      } else {
-        setState(() {
-          activeEmergency = null;
-        });
+        return;
       }
-    }
-  } catch (_) {}
-}
 
-void _showOfferDialog(Map<String, dynamic> emergency) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: const Text("🚑 New Emergency"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
-          const SizedBox(height: 6),
-          Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
+      final emergency = data["emergency"];
+      final status = emergency["status"];
+
+      // OFFER
+      if (status == "offered" &&
+          !_isOfferDialogShowing) {
+        _isOfferDialogShowing = true;
+        _showOfferDialog(emergency);
+        return;
+      }
+
+      // ASSIGNED
+      if (status == "assigned") {
+        if (activeEmergency == null ||
+            activeEmergency!["_id"] != emergency["_id"]) {
+          setState(() {
+            activeEmergency = emergency;
+            isBusy = true;
+          });
+        }
+      }
+
+    } catch (_) {}
+  }
+
+  /* ================= OFFER DIALOG ================= */
+
+  void _showOfferDialog(Map<String, dynamic> emergency) {
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("🚑 New Emergency"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
+            const SizedBox(height: 6),
+            Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _respondToEmergency(emergency["_id"], "accept");
+            },
+            child: const Text("Accept"),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _respondToEmergency(emergency["_id"], "reject");
-          },
-          child: const Text("Reject"),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _respondToEmergency(emergency["_id"], "accept");
-          },
-          child: const Text("Accept"),
-        ),
-      ],
-    ),
-  ).then((_) {
-    _isOfferDialogShowing = false;
-  });
-}
-Future<void> _respondToEmergency(String id, String action) async {
-  try {
-    final response = await http.put(
-      Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"action": action}),
-    );
-
-    if (response.statusCode == 200 && action == "accept") {
-      final data = jsonDecode(response.body);
-
-      setState(() {
-        isBusy = true;
-        activeEmergency = data["emergency"];
+    ).then((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        _isOfferDialogShowing = false;
       });
-    }
-  } catch (_) {}
-}
+    });
+  }
+
+  Future<void> _respondToEmergency(String id, String action) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"action": action}),
+      );
+
+      if (response.statusCode == 200 && action == "accept") {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          isBusy = true;
+          activeEmergency = data["emergency"];
+        });
+      }
+    } catch (_) {}
+  }
+
+  /* ================= LOCATION SEND ================= */
+
   Future<void> _sendLocationToBackend(
       double lat, double lng) async {
     try {
@@ -333,6 +340,33 @@ Future<void> _respondToEmergency(String id, String action) async {
         }),
       );
     } catch (_) {}
+  }
+
+  /* ================= ACTIVE CASE ================= */
+
+  Future<void> _openActiveCase() async {
+
+    await _checkForAssignedEmergency();
+
+    if (activeEmergency == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No active emergency."),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActiveCaseScreen(
+          emergencyId: activeEmergency!["_id"],
+          emergencyData: activeEmergency!,
+          ambulanceId: widget.ambulanceId,
+        ),
+      ),
+    );
   }
 
   @override
@@ -437,9 +471,7 @@ Future<void> _respondToEmergency(String id, String action) async {
           Switch(
             value: isAvailable,
             activeColor: Colors.green,
-            onChanged: (value) {
-              _updateDuty(value);
-            },
+            onChanged: _updateDuty,
           ),
         ],
       ),
@@ -461,28 +493,6 @@ Future<void> _respondToEmergency(String id, String action) async {
         _actionCard(Icons.bar_chart, "Performance"),
         _actionCard(Icons.settings, "Settings"),
       ],
-    );
-  }
-
-  void _openActiveCase() {
-    if (activeEmergency == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No active emergency."),
-        ),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ActiveCaseScreen(
-          emergencyId: activeEmergency!["_id"],
-          emergencyData: activeEmergency!,
-          ambulanceId: widget.ambulanceId,
-        ),
-      ),
     );
   }
 

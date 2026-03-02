@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import '../hospital/hospital_home_screen.dart';
+import '../ambulance/ambulance_home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -29,7 +32,8 @@ class _OtpScreenState extends State<OtpScreen> {
   int _secondsRemaining = 120;
   Timer? _timer;
 
-  final String baseUrl = "http://192.168.1.56:5000";
+  final String baseUrl =
+      "https://resqnet-backend-1xe3.onrender.com";
 
   @override
   void initState() {
@@ -54,68 +58,101 @@ class _OtpScreenState extends State<OtpScreen> {
   String get _otp => _controllers.map((c) => c.text).join();
 
   /* ================= VERIFY OTP ================= */
-Future<void> _verifyOtp() async {
-  if (_otp.length != 6) {
-    _showDialog("Invalid OTP", "Please enter complete 6-digit OTP.");
-    return;
-  }
 
-  if (_secondsRemaining == 0) {
-    _showDialog("OTP Expired", "Please request a new OTP.");
-    return;
-  }
-
-  setState(() => _isLoading = true);
-
-  try {
-    final response = await http.post(
-      Uri.parse("$baseUrl/api/auth/verify-otp"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "phone": widget.phone,
-        "otp": _otp,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-
-      // 🔥 Extract role
-      final role = data["account"]?["role"];
-
-      // 🔥 Extract hospital name
-      final hospitalName =
-          data["account"]?["hospitalName"] ?? "Hospital";
-
-      // 🔥 Extract hospital ID (VERY IMPORTANT)
-      final hospitalId = data["account"]?["_id"];
-
-      if (role == "hospital") {
-        final hospitalId = data["account"]["_id"];
-        final hospitalAddress = data["account"]["address"];
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HospitalHomeScreen(
-              hospitalName: hospitalName,
-              hospitalId: hospitalId,   // ✅ Pass ID
-            ),
-          ),
-        );
-      } else {
-        Navigator.popUntil(context, (route) => route.isFirst);
-      }
-
-    } else {
-      _showDialog("Error", data["message"] ?? "Invalid OTP");
+  Future<void> _verifyOtp() async {
+    if (_otp.length != 6) {
+      _showDialog("Invalid OTP", "Please enter complete 6-digit OTP.");
+      return;
     }
-  } catch (e) {
-    _showDialog("Error", "Server connection failed");
-  }
 
-  setState(() => _isLoading = false);
-}
+    if (_secondsRemaining == 0) {
+      _showDialog("OTP Expired", "Please request a new OTP.");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 🔔 Request notification permission
+      await FirebaseMessaging.instance.requestPermission();
+
+      // 🔔 Get FCM token
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+
+      final response = await http.post(
+        Uri.parse("$baseUrl/api/auth/verify-otp"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "phone": widget.phone,
+          "otp": _otp,
+          "fcmToken": fcmToken,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        final role = data["account"]?["role"];
+
+        /* ===== HOSPITAL LOGIN ===== */
+        if (role == "hospital") {
+          final hospitalName =
+              data["account"]?["hospitalName"] ?? "Hospital";
+          final hospitalId =
+              data["account"]?["_id"];
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HospitalHomeScreen(
+                hospitalName: hospitalName,
+                hospitalId: hospitalId,
+              ),
+            ),
+          );
+        }
+
+        /* ===== AMBULANCE LOGIN ===== */
+        else if (role == "ambulance") {
+          final ambulanceId =
+              data["account"]?["_id"];
+          final ambulanceName =
+              data["account"]?["fullName"] ?? "Ambulance";
+          final vehicleNumber =
+              data["account"]?["vehicleNumber"] ?? "";
+          final isAvailable =
+              data["account"]?["isAvailable"] ?? false;
+          final isBusy =
+              data["account"]?["isBusy"] ?? false;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AmbulanceHomeScreen(
+                ambulanceId: ambulanceId,
+                ambulanceName: ambulanceName,
+                vehicleNumber: vehicleNumber,
+                isAvailable: isAvailable,
+                isBusy: isBusy,
+              ),
+            ),
+          );
+        }
+
+        /* ===== OTHER ROLES ===== */
+        else {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
+      } else {
+        _showDialog(
+            "Error", data["message"] ?? "Invalid OTP");
+      }
+    } catch (e) {
+      _showDialog("Error", "Server connection failed");
+    }
+
+    setState(() => _isLoading = false);
+  }
 
   /* ================= RESEND OTP ================= */
 
@@ -137,9 +174,11 @@ Future<void> _verifyOtp() async {
 
       if (response.statusCode == 200) {
         _startTimer();
-        _showDialog("OTP Sent", data["message"] ?? "New OTP sent.");
+        _showDialog(
+            "OTP Sent", data["message"] ?? "New OTP sent.");
       } else {
-        _showDialog("Error", data["message"] ?? "Failed to resend OTP");
+        _showDialog("Error",
+            data["message"] ?? "Failed to resend OTP");
       }
     } catch (e) {
       _showDialog("Error", "Server connection failed");
@@ -152,15 +191,13 @@ Future<void> _verifyOtp() async {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15)),
         title: Text(title),
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             child: const Text("OK"),
           ),
         ],
@@ -174,31 +211,34 @@ Future<void> _verifyOtp() async {
     return Expanded(
       child: Container(
         height: 55,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        margin:
+            const EdgeInsets.symmetric(horizontal: 4),
         child: TextField(
           controller: _controllers[index],
           focusNode: _focusNodes[index],
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           maxLength: 1,
-          cursorColor: Colors.red,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
+            letterSpacing: 2,
             color: Colors.black,
           ),
+          cursorColor: Colors.red,
           decoration: InputDecoration(
             counterText: "",
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 12),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.grey),
+              borderRadius:
+                  BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Colors.grey),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+                  BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFFD32F2F),
                 width: 2,
@@ -242,67 +282,81 @@ Future<void> _verifyOtp() async {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Container(
-            padding: const EdgeInsets.all(30),
+            padding:
+                const EdgeInsets.all(30),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius:
+                  BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black
+                      .withOpacity(0.05),
                   blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  offset:
+                      const Offset(0, 10),
                 )
               ],
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
                 Text(
                   "OTP sent to ${widget.phone}",
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                      fontSize: 16,
+                      fontWeight:
+                          FontWeight.w500),
                 ),
                 const SizedBox(height: 25),
-
                 Row(
-                  children: List.generate(
-                    6,
-                    (index) => _buildOtpBox(index),
-                  ),
+                  children:
+                      List.generate(6,
+                          (index) =>
+                              _buildOtpBox(
+                                  index)),
                 ),
-
                 const SizedBox(height: 20),
-
                 _secondsRemaining > 0
                     ? Text(
                         "Expires in $minutes:${seconds.toString().padLeft(2, '0')}",
-                        style: const TextStyle(color: Colors.grey),
+                        style:
+                            const TextStyle(
+                                color: Colors
+                                    .grey),
                       )
                     : TextButton(
-                        onPressed: _resendOtp,
+                        onPressed:
+                            _resendOtp,
                         child: const Text(
                           "Resend OTP",
                           style: TextStyle(
-                              fontWeight: FontWeight.bold),
+                              fontWeight:
+                                  FontWeight
+                                      .bold),
                         ),
                       ),
-
                 const SizedBox(height: 25),
-
                 SizedBox(
-                  width: double.infinity,
+                  width:
+                      double.infinity,
                   height: 50,
-                  child: ElevatedButton(
+                  child:
+                      ElevatedButton(
                     onPressed:
-                        _isLoading || _secondsRemaining == 0
+                        _isLoading ||
+                                _secondsRemaining ==
+                                    0
                             ? null
                             : _verifyOtp,
                     child: _isLoading
                         ? const CircularProgressIndicator(
-                            color: Colors.white)
-                        : const Text("Verify OTP"),
+                            color:
+                                Colors
+                                    .white)
+                        : const Text(
+                            "Verify OTP"),
                   ),
                 ),
               ],

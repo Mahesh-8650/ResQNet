@@ -18,7 +18,7 @@ class CompletedRequestsScreen extends StatefulWidget {
 class _CompletedRequestsScreenState
     extends State<CompletedRequestsScreen> {
 
-  final String baseUrl = "http://192.168.1.56:5000";
+  final String baseUrl = "https://resqnet-backend-1xe3.onrender.com";
 
   bool isLoading = true;
 
@@ -34,13 +34,15 @@ class _CompletedRequestsScreenState
   }
 
   // ✅ Convert UTC to Indian Time
-  String formatToIndianTime(String utcTime) {
-    DateTime utcDate = DateTime.parse(utcTime);
-    DateTime istDate = utcDate.toLocal();
+ String formatToIndianTime(String? utcTime) {
+  if (utcTime == null) return "N/A";
 
-    return "${istDate.day}/${istDate.month}/${istDate.year} "
-           "${istDate.hour}:${istDate.minute.toString().padLeft(2, '0')}";
-  }
+  DateTime utcDate = DateTime.parse(utcTime);
+  DateTime istDate = utcDate.toLocal();
+
+  return "${istDate.day}/${istDate.month}/${istDate.year} "
+         "${istDate.hour}:${istDate.minute.toString().padLeft(2, '0')}";
+}
 
   Future<void> fetchCompleted() async {
     try {
@@ -66,7 +68,9 @@ class _CompletedRequestsScreenState
         });
       }
     } catch (e) {
-      print("Fetch completed error: $e");
+      setState((){
+        isLoading = false;
+      });
     }
   }
 

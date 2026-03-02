@@ -88,7 +88,7 @@ class _RegisterUserScreenState
     try {
       final res = await http.post(
         Uri.parse(
-            "http://192.168.1.56:5000/api/auth/register/user"),
+            "https://resqnet-backend-1xe3.onrender.com/api/auth/register/user"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "fullName": _name.text.trim(),

@@ -12,6 +12,10 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import citizenEmergencyRoutes from "./routes/citizenEmergencyRoutes.js";
 
+/* ===================================================== */
+/* ================= EXPRESS APP ======================= */
+/* ===================================================== */
+
 const app = express();
 
 /* ===================================================== */

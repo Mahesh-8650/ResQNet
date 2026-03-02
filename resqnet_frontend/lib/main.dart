@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'welcome/welcome_screen.dart';
 
-void main() {
+/// Background message handler
+Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 Initialize Firebase
+  await Firebase.initializeApp();
+
+  // 🔥 Enable background messaging
+  FirebaseMessaging.onBackgroundMessage(
+      _firebaseBackgroundHandler);
+
   runApp(const ResQNetApp());
 }
 
@@ -73,7 +90,6 @@ class ResQNetApp extends StatelessWidget {
           ),
         ),
       ),
-
       home: const WelcomeScreen(),
     );
   }

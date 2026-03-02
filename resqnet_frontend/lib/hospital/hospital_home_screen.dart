@@ -19,7 +19,7 @@ class HospitalHomeScreen extends StatefulWidget {
 }
 
 class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
-  final String baseUrl = "http://192.168.1.56:5000";
+  final String baseUrl = "https://resqnet-backend-1xe3.onrender.com";
 
   int icuBeds = 0;
   int generalBeds = 0;

@@ -2,11 +2,12 @@ import express from "express";
 import CitizenEmergency from "../models/CitizenEmergency.js";
 import Ambulance from "../models/Ambulance.js";
 import Hospital from "../models/Hospital.js";
+import admin from "../config/firebaseAdmin.js";
 
 const router = express.Router();
 
 /* ===================================================== */
-/* 🚑 CREATE CITIZAN EMERGENCY */
+/* 🚑 CREATE CITIZEN EMERGENCY */
 /* ===================================================== */
 
 router.post("/create", async (req, res) => {
@@ -27,8 +28,6 @@ router.post("/create", async (req, res) => {
 
     let assignedHospitalId = hospitalId || null;
 
-    /* ================= AUTO ASSIGN HOSPITAL ================= */
-
     if (!hospitalId) {
       const hospitals = await Hospital.find();
       if (hospitals.length > 0) {
@@ -36,38 +35,16 @@ router.post("/create", async (req, res) => {
       }
     }
 
-    /* ================= CREATE EMERGENCY ================= */
-
-    const emergency = new CitizenEmergency({
+    const emergency = await CitizenEmergency.create({
       patientName,
       emergencyType,
-      patientLocation: {
-        latitude,
-        longitude,
-      },
+      patientLocation: { latitude, longitude },
       hospitalId: assignedHospitalId,
       selectedBy: hospitalId ? "user" : "system",
       status: "pending",
     });
 
-    await emergency.save();
-
-    /* ================= AUTO ASSIGN AMBULANCE ================= */
-
-    const availableAmbulance = await Ambulance.findOne({
-      isAvailable: true,
-      isBusy: false,
-    });
-
-    if (availableAmbulance) {
-      emergency.ambulanceId = availableAmbulance._id;
-      emergency.status = "assigned";
-
-      availableAmbulance.isBusy = true;
-
-      await availableAmbulance.save();
-      await emergency.save();
-    }
+    await offerToNextAmbulance(emergency._id);
 
     return res.status(201).json({
       message: "Emergency created successfully",
@@ -76,11 +53,68 @@ router.post("/create", async (req, res) => {
 
   } catch (error) {
     console.error("Create emergency error:", error);
-    return res.status(500).json({
-      message: "Server error",
-    });
+    return res.status(500).json({ message: "Server error" });
   }
 });
+
+/* ===================================================== */
+/* 🚑 OFFER LOGIC FUNCTION */
+/* ===================================================== */
+
+async function offerToNextAmbulance(emergencyId) {
+
+  const emergency = await CitizenEmergency.findById(emergencyId);
+
+  if (!emergency || emergency.status === "assigned") return;
+
+  const availableAmbulance = await Ambulance.findOne({
+    isAvailable: true,
+    isBusy: false,
+  });
+
+  if (!availableAmbulance) return;
+
+  emergency.ambulanceId = availableAmbulance._id;
+  emergency.status = "offered";
+  await emergency.save();
+
+  /* ===== 🔔 SEND PUSH NOTIFICATION ===== */
+
+  if (availableAmbulance.fcmToken) {
+    try {
+      await admin.messaging().send({
+        token: availableAmbulance.fcmToken,
+        notification: {
+          title: "🚑 New Emergency Request",
+          body: `Patient: ${emergency.patientName} | ${emergency.emergencyType}`,
+        },
+        data: {
+          emergencyId: emergency._id.toString(),
+          type: "emergency_offer",
+        },
+      });
+    } catch (err) {
+      console.error("FCM Send Error:", err);
+    }
+  }
+
+  /* ===== 60 SECOND TIMEOUT ===== */
+
+  setTimeout(async () => {
+
+    const updatedEmergency = await CitizenEmergency.findById(emergencyId);
+    if (!updatedEmergency) return;
+
+    if (updatedEmergency.status === "offered") {
+      updatedEmergency.ambulanceId = null;
+      updatedEmergency.status = "pending";
+      await updatedEmergency.save();
+
+      await offerToNextAmbulance(emergencyId);
+    }
+
+  }, 60000);
+}
 
 /* ===================================================== */
 /* 🚑 GET ACTIVE EMERGENCY FOR AMBULANCE */
@@ -92,15 +126,16 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
     const emergency = await CitizenEmergency.findOne({
       ambulanceId,
-      status: "assigned",
+      status: { $in: ["offered", "assigned"] },
     })
-      .populate("hospitalId")
+      .populate(
+        "hospitalId",
+        "hospitalName address phone location"
+      )
       .sort({ createdAt: -1 });
 
     if (!emergency) {
-      return res.status(200).json({
-        hasEmergency: false,
-      });
+      return res.status(200).json({ hasEmergency: false });
     }
 
     return res.status(200).json({
@@ -110,14 +145,51 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
   } catch (error) {
     console.error("Fetch ambulance emergency error:", error);
-    return res.status(500).json({
-      message: "Server error",
-    });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 /* ===================================================== */
-/* 🚑 UPDATE EMERGENCY STATUS */
+/* 🚑 DRIVER ACCEPT EMERGENCY */
+/* ===================================================== */
+
+router.put("/respond/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ambulanceId } = req.body;
+
+    const emergency = await CitizenEmergency.findById(id);
+
+    if (!emergency) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    if (emergency.status !== "offered") {
+      return res.status(400).json({
+        message: "Emergency no longer available",
+      });
+    }
+
+    emergency.status = "assigned";
+    await emergency.save();
+
+    await Ambulance.findByIdAndUpdate(ambulanceId, {
+      isBusy: true,
+    });
+
+    return res.status(200).json({
+      message: "Emergency accepted",
+      emergency,
+    });
+
+  } catch (error) {
+    console.error("Accept emergency error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 COMPLETE EMERGENCY */
 /* ===================================================== */
 
 router.put("/update-status/:id", async (req, res) => {
@@ -125,11 +197,9 @@ router.put("/update-status/:id", async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const allowedStatuses = ["assigned", "completed"];
-
-    if (!allowedStatuses.includes(status)) {
+    if (status !== "completed") {
       return res.status(400).json({
-        message: "Invalid status value",
+        message: "Only completed status allowed",
       });
     }
 
@@ -141,32 +211,27 @@ router.put("/update-status/:id", async (req, res) => {
       });
     }
 
-    emergency.status = status;
+    emergency.status = "completed";
 
-    if (status === "completed") {
+    if (emergency.ambulanceId) {
       await Ambulance.findByIdAndUpdate(
         emergency.ambulanceId,
         { isBusy: false }
       );
-
-      emergency.ambulanceId = null;
     }
 
+    emergency.ambulanceId = null;
     await emergency.save();
 
     return res.status(200).json({
-      message: "Status updated successfully",
+      message: "Emergency completed",
       emergency,
     });
 
   } catch (error) {
-    console.error("Update status error:", error);
-    return res.status(500).json({
-      message: "Server error",
-    });
+    console.error("Complete emergency error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 });
-
-/* ===================================================== */
 
 export default router;

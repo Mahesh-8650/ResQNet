@@ -39,10 +39,8 @@ const citizenEmergencySchema = new mongoose.Schema(
       type: String,
       enum: [
         "pending",
+        "offered",
         "assigned",
-        "pickup",
-        "enroute",
-        "at_hospital",
         "completed",
       ],
       default: "pending",

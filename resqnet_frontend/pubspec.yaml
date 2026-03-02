@@ -18,6 +18,8 @@ dependencies:
   file_picker: ^8.0.0
   geolocator: ^14.0.2
   geocoding: ^2.1.1   # 🔥 ADDED
+  firebase_core: ^4.5.0
+  firebase_messaging: ^16.1.2
 
 dev_dependencies:
   flutter_test:
