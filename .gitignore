@@ -2,11 +2,13 @@
 backend/node_modules/
 backend/.env
 backend/uploads/
+backend/firebaseServiceAccount.json
 
 # Flutter
 resqnet_frontend/build/
 resqnet_frontend/.dart_tool/
 resqnet_frontend/.idea/
+resqnet_frontend/android/app/google-services.json
 
 # System
 .DS_Store
