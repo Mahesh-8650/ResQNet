@@ -70,6 +70,8 @@ async function offerToNextAmbulance(emergencyId) {
   const availableAmbulance = await Ambulance.findOne({
     isAvailable: true,
     isBusy: false,
+    _id:{ $ne:
+      emergency.ambulanceId}
   });
 
   if (!availableAmbulance) return;

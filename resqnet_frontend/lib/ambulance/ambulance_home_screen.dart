@@ -307,23 +307,28 @@ class _AmbulanceHomeScreenState
   }
 
   Future<void> _respondToEmergency(String id, String action) async {
-    try {
-      final response = await http.put(
-        Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"action": action}),
-      );
+  try {
+    final response = await http.put(
+      Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "ambulanceId": widget.ambulanceId
+      }),
+    );
 
-      if (response.statusCode == 200 && action == "accept") {
-        final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        setState(() {
-          isBusy = true;
-          activeEmergency = data["emergency"];
-        });
-      }
-    } catch (_) {}
+      setState(() {
+        isBusy = true;
+        isAvailable = true;   // 🔥 Important
+        activeEmergency = data["emergency"];
+      });
+    }
+  } catch (e) {
+    print("Respond error: $e");
   }
+}
 
   /* ================= LOCATION SEND ================= */
 
