@@ -2,19 +2,29 @@ import mongoose from "mongoose";
 
 const citizenEmergencySchema = new mongoose.Schema(
   {
+    // 🔥 Patient Location (GeoJSON format for nearest search)
     patientLocation: {
-      latitude: Number,
-      longitude: Number,
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
     },
 
     patientName: {
       type: String,
       required: true,
+      trim: true,
     },
 
     emergencyType: {
       type: String,
       required: true,
+      trim: true,
     },
 
     hospitalId: {
@@ -48,5 +58,8 @@ const citizenEmergencySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// 🔥 Required for nearest driver search
+citizenEmergencySchema.index({ patientLocation: "2dsphere" });
 
 export default mongoose.model("CitizenEmergency", citizenEmergencySchema);

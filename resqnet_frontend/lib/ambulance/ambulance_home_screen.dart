@@ -237,14 +237,22 @@ class _AmbulanceHomeScreenState
       final data = jsonDecode(response.body);
 
       if (!data["hasEmergency"]) {
-        if (activeEmergency != null) {
-          setState(() {
-            activeEmergency = null;
-            isBusy = false;
-          });
-        }
-        return;
-      }
+
+  // 🔥 If dialog is open, close it
+  if (_isOfferDialogShowing) {
+    Navigator.of(context, rootNavigator: true).pop();
+    _isOfferDialogShowing = false;
+  }
+
+  if (activeEmergency != null) {
+    setState(() {
+      activeEmergency = null;
+      isBusy = false;
+    });
+  }
+
+  return;
+}
 
       final emergency = data["emergency"];
       final status = emergency["status"];

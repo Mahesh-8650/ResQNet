@@ -38,7 +38,10 @@ router.post("/create", async (req, res) => {
     const emergency = await CitizenEmergency.create({
       patientName,
       emergencyType,
-      patientLocation: { latitude, longitude },
+      patientLocation: {
+  type: "Point",
+  coordinates: [longitude, latitude],
+},
       hospitalId: assignedHospitalId,
       selectedBy: hospitalId ? "user" : "system",
       status: "pending",
@@ -68,11 +71,19 @@ async function offerToNextAmbulance(emergencyId) {
   if (!emergency || emergency.status === "assigned") return;
 
   const availableAmbulance = await Ambulance.findOne({
-    isAvailable: true,
-    isBusy: false,
-    _id:{ $ne:
-      emergency.ambulanceId}
-  });
+  isAvailable: true,
+  isBusy: false,
+  currentLocation: {
+    $near: {
+      $geometry: {
+        type: "Point",
+        coordinates: emergency.patientLocation.coordinates,
+      },
+      $maxDistance: 10000, // 50 km limit (optional)
+    },
+  },
+  _id: { $ne: emergency.ambulanceId },
+});
 
   if (!availableAmbulance) return;
 
@@ -100,22 +111,27 @@ async function offerToNextAmbulance(emergencyId) {
     }
   }
 
-  /* ===== 60 SECOND TIMEOUT ===== */
+ /* ===== 60 SECOND TIMEOUT ===== */
 
-  setTimeout(async () => {
+setTimeout(async () => {
 
-    const updatedEmergency = await CitizenEmergency.findById(emergencyId);
-    if (!updatedEmergency) return;
+  const updatedEmergency = await CitizenEmergency.findById(emergencyId);
+  if (!updatedEmergency) return;
 
-    if (updatedEmergency.status === "offered") {
-      updatedEmergency.ambulanceId = null;
-      updatedEmergency.status = "pending";
-      await updatedEmergency.save();
+  if (updatedEmergency.status === "offered") {
 
-      await offerToNextAmbulance(emergencyId);
-    }
+    const previousDriverId = updatedEmergency.ambulanceId;
 
-  }, 60000);
+    // Expire current offer
+    updatedEmergency.ambulanceId = null;
+    updatedEmergency.status = "pending";
+    await updatedEmergency.save();
+
+    // 🔥 Always call assignment again
+    await offerToNextAmbulance(emergencyId);
+  }
+
+}, 60000);
 }
 
 /* ===================================================== */
