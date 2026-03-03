@@ -188,7 +188,6 @@ router.put("/respond/:id", async (req, res) => {
       ambulanceId,
       {
         isBusy: true,
-        isAvailable: false,
       },
       { new: true }
     );

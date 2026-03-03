@@ -264,6 +264,7 @@ class _AmbulanceHomeScreenState
           setState(() {
             activeEmergency = emergency;
             isBusy = true;
+            isAvailable=true;
           });
         }
       }
@@ -273,40 +274,37 @@ class _AmbulanceHomeScreenState
 
   /* ================= OFFER DIALOG ================= */
 
-  void _showOfferDialog(Map<String, dynamic> emergency) {
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("🚑 New Emergency"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
-            const SizedBox(height: 6),
-            Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _respondToEmergency(emergency["_id"], "accept");
-            },
-            child: const Text("Accept"),
-          ),
+ void _showOfferDialog(Map<String, dynamic> emergency) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => AlertDialog(
+      title: const Text("🚑 New Emergency"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
+          const SizedBox(height: 6),
+          Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
         ],
       ),
-    ).then((_) {
-      Future.delayed(const Duration(seconds: 1), () {
-        _isOfferDialogShowing = false;
-      });
-    });
-  }
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _respondToEmergency(emergency["_id"]);
+          },
+          child: const Text("Accept"),
+        ),
+      ],
+    ),
+  ).then((_) {
+    _isOfferDialogShowing = false;
+  });
+}
 
-  Future<void> _respondToEmergency(String id, String action) async {
+  Future<void> _respondToEmergency(String id) async {
   try {
     final response = await http.put(
       Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
@@ -321,9 +319,11 @@ class _AmbulanceHomeScreenState
 
       setState(() {
         isBusy = true;
-        isAvailable = true;   // 🔥 Important
+        isAvailable = true;   // Stay ON DUTY
         activeEmergency = data["emergency"];
       });
+
+      _isOfferDialogShowing = false; // 🔥 Prevent repeat
     }
   } catch (e) {
     print("Respond error: $e");
