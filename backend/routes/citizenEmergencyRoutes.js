@@ -148,7 +148,6 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
 /* ===================================================== */
 /* 🚑 DRIVER ACCEPT EMERGENCY */
 /* ===================================================== */
@@ -158,10 +157,18 @@ router.put("/respond/:id", async (req, res) => {
     const { id } = req.params;
     const { ambulanceId } = req.body;
 
+    if (!ambulanceId) {
+      return res.status(400).json({
+        message: "Ambulance ID is required",
+      });
+    }
+
     const emergency = await CitizenEmergency.findById(id);
 
     if (!emergency) {
-      return res.status(404).json({ message: "Emergency not found" });
+      return res.status(404).json({
+        message: "Emergency not found",
+      });
     }
 
     if (emergency.status !== "offered") {
@@ -170,16 +177,26 @@ router.put("/respond/:id", async (req, res) => {
       });
     }
 
+    // ✅ Update emergency
     emergency.status = "assigned";
     await emergency.save();
 
-    await Ambulance.findByIdAndUpdate(ambulanceId, {
-      isBusy: true,
-    });
+    // ✅ Update ambulance
+    const updatedAmbulance = await Ambulance.findByIdAndUpdate(
+      ambulanceId,
+      {
+        isBusy: true,
+        isAvailable: false,
+      },
+      { new: true }
+    );
+
+    console.log("Updated Ambulance:", updatedAmbulance);
 
     return res.status(200).json({
       message: "Emergency accepted",
       emergency,
+      ambulance: updatedAmbulance,
     });
 
   } catch (error) {

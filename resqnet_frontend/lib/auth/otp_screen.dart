@@ -73,10 +73,10 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 🔔 Request notification permission
+      // 🔥 Request permission once
       await FirebaseMessaging.instance.requestPermission();
 
-      // 🔔 Get FCM token
+      // 🔥 Get FCM token
       String? fcmToken = await FirebaseMessaging.instance.getToken();
 
       final response = await http.post(
@@ -92,61 +92,49 @@ class _OtpScreenState extends State<OtpScreen> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+
         final role = data["account"]?["role"];
 
-        /* ===== HOSPITAL LOGIN ===== */
         if (role == "hospital") {
-          final hospitalName =
-              data["account"]?["hospitalName"] ?? "Hospital";
-          final hospitalId =
-              data["account"]?["_id"];
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => HospitalHomeScreen(
-                hospitalName: hospitalName,
-                hospitalId: hospitalId,
+                hospitalName:
+                    data["account"]?["hospitalName"] ?? "Hospital",
+                hospitalId: data["account"]?["_id"],
               ),
             ),
           );
         }
 
-        /* ===== AMBULANCE LOGIN ===== */
         else if (role == "ambulance") {
-          final ambulanceId =
-              data["account"]?["_id"];
-          final ambulanceName =
-              data["account"]?["fullName"] ?? "Ambulance";
-          final vehicleNumber =
-              data["account"]?["vehicleNumber"] ?? "";
-          final isAvailable =
-              data["account"]?["isAvailable"] ?? false;
-          final isBusy =
-              data["account"]?["isBusy"] ?? false;
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => AmbulanceHomeScreen(
-                ambulanceId: ambulanceId,
-                ambulanceName: ambulanceName,
-                vehicleNumber: vehicleNumber,
-                isAvailable: isAvailable,
-                isBusy: isBusy,
+                ambulanceId: data["account"]?["_id"],
+                ambulanceName:
+                    data["account"]?["fullName"] ?? "Ambulance",
+                vehicleNumber:
+                    data["account"]?["vehicleNumber"] ?? "",
+                isAvailable:
+                    data["account"]?["isAvailable"] ?? false,
+                isBusy:
+                    data["account"]?["isBusy"] ?? false,
               ),
             ),
           );
         }
 
-        /* ===== OTHER ROLES ===== */
         else {
           Navigator.popUntil(context, (route) => route.isFirst);
         }
+
       } else {
-        _showDialog(
-            "Error", data["message"] ?? "Invalid OTP");
+        _showDialog("Error", data["message"] ?? "Invalid OTP");
       }
+
     } catch (e) {
       _showDialog("Error", "Server connection failed");
     }
@@ -174,8 +162,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
       if (response.statusCode == 200) {
         _startTimer();
-        _showDialog(
-            "OTP Sent", data["message"] ?? "New OTP sent.");
+        _showDialog("OTP Sent", data["message"] ?? "New OTP sent.");
       } else {
         _showDialog("Error",
             data["message"] ?? "Failed to resend OTP");
@@ -185,14 +172,10 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  /* ================= DIALOG ================= */
-
   void _showDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15)),
         title: Text(title),
         content: Text(message),
         actions: [
@@ -205,40 +188,35 @@ class _OtpScreenState extends State<OtpScreen> {
     );
   }
 
-  /* ================= OTP BOX ================= */
-
   Widget _buildOtpBox(int index) {
     return Expanded(
       child: Container(
         height: 55,
-        margin:
-            const EdgeInsets.symmetric(horizontal: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
         child: TextField(
           controller: _controllers[index],
           focusNode: _focusNodes[index],
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           maxLength: 1,
+          cursorColor: Colors.red,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            letterSpacing: 2,
             color: Colors.black,
           ),
-          cursorColor: Colors.red,
           decoration: InputDecoration(
             counterText: "",
             filled: true,
             fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 12),
             enabledBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Colors.grey),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.grey),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFFD32F2F),
                 width: 2,
@@ -268,8 +246,6 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  /* ================= UI ================= */
-
   @override
   Widget build(BuildContext context) {
     final minutes = _secondsRemaining ~/ 60;
@@ -282,81 +258,41 @@ class _OtpScreenState extends State<OtpScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Container(
-            padding:
-                const EdgeInsets.all(30),
+            padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius:
-                  BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black
-                      .withOpacity(0.05),
-                  blurRadius: 20,
-                  offset:
-                      const Offset(0, 10),
-                )
-              ],
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
-              mainAxisSize:
-                  MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   "OTP sent to ${widget.phone}",
                   style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          FontWeight.w500),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 25),
                 Row(
                   children:
-                      List.generate(6,
-                          (index) =>
-                              _buildOtpBox(
-                                  index)),
+                      List.generate(6, (index) => _buildOtpBox(index)),
                 ),
                 const SizedBox(height: 20),
-                _secondsRemaining > 0
-                    ? Text(
-                        "Expires in $minutes:${seconds.toString().padLeft(2, '0')}",
-                        style:
-                            const TextStyle(
-                                color: Colors
-                                    .grey),
-                      )
-                    : TextButton(
-                        onPressed:
-                            _resendOtp,
-                        child: const Text(
-                          "Resend OTP",
-                          style: TextStyle(
-                              fontWeight:
-                                  FontWeight
-                                      .bold),
-                        ),
-                      ),
+                Text(
+                  "Expires in $minutes:${seconds.toString().padLeft(2, '0')}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
                 const SizedBox(height: 25),
                 SizedBox(
-                  width:
-                      double.infinity,
+                  width: double.infinity,
                   height: 50,
-                  child:
-                      ElevatedButton(
-                    onPressed:
-                        _isLoading ||
-                                _secondsRemaining ==
-                                    0
-                            ? null
-                            : _verifyOtp,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _verifyOtp,
                     child: _isLoading
                         ? const CircularProgressIndicator(
-                            color:
-                                Colors
-                                    .white)
-                        : const Text(
-                            "Verify OTP"),
+                            color: Colors.white)
+                        : const Text("Verify OTP"),
                   ),
                 ),
               ],
