@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'active_case_screen.dart';
+import 'case_history_page.dart';
 
 class AmbulanceHomeScreen extends StatefulWidget {
   final String ambulanceId;
@@ -500,7 +501,20 @@ class _AmbulanceHomeScreenState
       physics:
           const NeverScrollableScrollPhysics(),
       children: [
-        _actionCard(Icons.history, "Case History"),
+        _actionCard(
+  Icons.history,
+  "Case History",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CaseHistoryPage(
+          ambulanceId: widget.ambulanceId,
+        ),
+      ),
+    );
+  },
+),
         _actionCard(Icons.local_hospital, "Active Case",
             onTap: _openActiveCase),
         _actionCard(Icons.bar_chart, "Performance"),

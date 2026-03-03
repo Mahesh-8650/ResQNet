@@ -268,4 +268,30 @@ router.put("/update-status/:id", async (req, res) => {
   }
 });
 
+/* ===================================================== */
+/* 🚑 GET COMPLETED HISTORY FOR AMBULANCE */
+/* ===================================================== */
+
+router.get("/history/:ambulanceId", async (req, res) => {
+  try {
+    const { ambulanceId } = req.params;
+
+    const history = await CitizenEmergency.find({
+      ambulanceId: ambulanceId,
+      status: "completed",
+    })
+      .populate("hospitalId", "hospitalName")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      count: history.length,
+      history,
+    });
+
+  } catch (error) {
+    console.error("History fetch error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;
