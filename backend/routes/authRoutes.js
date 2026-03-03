@@ -892,4 +892,114 @@ router.get("/ambulance/:id", async (req, res) => {
 });
 
 
+
+/* ===================================================== */
+/* 🚑 GET AMBULANCE PROFILE */
+/* ===================================================== */
+
+router.get("/ambulance/:id", async (req, res) => {
+  try {
+    const ambulance = await Ambulance
+      .findById(req.params.id)
+      .select("-password");
+
+    if (!ambulance) {
+      return res.status(404).json({
+        message: "Ambulance not found",
+      });
+    }
+
+    return res.status(200).json(ambulance);
+
+  } catch (error) {
+    console.error("FETCH PROFILE ERROR:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 UPDATE AMBULANCE PROFILE */
+/* ===================================================== */
+
+router.put("/ambulance/update/:id", async (req, res) => {
+  try {
+    const { fullName, licenseNumber, vehicleNumber } = req.body;
+
+    const updatedAmbulance =
+      await Ambulance.findByIdAndUpdate(
+        req.params.id,
+        {
+          fullName,
+          licenseNumber,
+          vehicleNumber,
+        },
+        { new: true }
+      ).select("-password");
+
+    if (!updatedAmbulance) {
+      return res.status(404).json({
+        message: "Ambulance not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      ambulance: updatedAmbulance,
+    });
+
+  } catch (error) {
+    console.error("UPDATE PROFILE ERROR:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 CHANGE AMBULANCE PASSWORD */
+/* ===================================================== */
+
+router.put("/ambulance/change-password/:id", async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({
+        message: "New password is required",
+      });
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters and include uppercase, lowercase, number and special character.",
+      });
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(newPassword, 10);
+
+    await Ambulance.findByIdAndUpdate(
+      req.params.id,
+      { password: hashedPassword }
+    );
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+
+  } catch (error) {
+    console.error("CHANGE PASSWORD ERROR:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
+
 export default router;

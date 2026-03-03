@@ -264,13 +264,10 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
                                       const SizedBox(
                                           width: 5),
                                       Text(
-                                        caseItem[
-                                                    "patientLocation"]?[
-                                                "coordinates"] !=
-                                            null
-                                            ? "Lat: ${caseItem["patientLocation"]["coordinates"][1]}  Lng: ${caseItem["patientLocation"]["coordinates"][0]}"
-                                            : "Location unavailable",
-                                      ),
+  caseItem["patientLocation"] != null
+      ? "Lat: ${caseItem["patientLocation"]["latitude"]}  Lng: ${caseItem["patientLocation"]["longitude"]}"
+      : "Location unavailable",
+),
                                     ],
                                   ),
 

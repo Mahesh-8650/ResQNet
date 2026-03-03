@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'active_case_screen.dart';
 import 'case_history_page.dart';
+import 'ambulance_settings_page.dart';
 
 class AmbulanceHomeScreen extends StatefulWidget {
   final String ambulanceId;
@@ -518,7 +519,20 @@ class _AmbulanceHomeScreenState
         _actionCard(Icons.local_hospital, "Active Case",
             onTap: _openActiveCase),
         _actionCard(Icons.bar_chart, "Performance"),
-        _actionCard(Icons.settings, "Settings"),
+        _actionCard(
+  Icons.settings,
+  "Settings",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AmbulanceSettingsPage(
+          ambulanceId: widget.ambulanceId,
+        ),
+      ),
+    );
+  },
+),
       ],
     );
   }
