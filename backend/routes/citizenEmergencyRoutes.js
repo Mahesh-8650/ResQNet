@@ -89,6 +89,7 @@ async function offerToNextAmbulance(emergencyId) {
 
   emergency.ambulanceId = availableAmbulance._id;
   emergency.status = "offered";
+  emergency.offeredAt = new Date();
   await emergency.save();
 
   /* ===== 🔔 SEND PUSH NOTIFICATION ===== */
@@ -197,7 +198,14 @@ router.put("/respond/:id", async (req, res) => {
 
     // ✅ Update emergency
     emergency.status = "assigned";
-    await emergency.save();
+emergency.acceptedAt = new Date();  // ✅ ADD
+
+if (emergency.offeredAt) {
+  emergency.responseTimeInSeconds =
+    (emergency.acceptedAt - emergency.offeredAt) / 1000;
+}
+
+await emergency.save();
 
     // ✅ Update ambulance
     const updatedAmbulance = await Ambulance.findByIdAndUpdate(
@@ -246,6 +254,7 @@ router.put("/update-status/:id", async (req, res) => {
     }
 
     emergency.status = "completed";
+    emergency.completedAt = new Date();
 
     if (emergency.ambulanceId) {
       await Ambulance.findByIdAndUpdate(

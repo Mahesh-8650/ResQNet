@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../welcome/welcome_screen.dart'; // change if your path differs
+import '../welcome/welcome_screen.dart';
 
 class AmbulanceSettingsPage extends StatefulWidget {
   final String ambulanceId;
@@ -28,15 +28,8 @@ class _AmbulanceSettingsPageState
   final licenseController = TextEditingController();
   final vehicleController = TextEditingController();
 
-  final newPasswordController = TextEditingController();
-  final confirmPasswordController =
-      TextEditingController();
-
   bool isEditing = false;
   bool isLoading = true;
-  bool obscureNew = true;
-  bool obscureConfirm = true;
-
   String status = "";
 
   @override
@@ -48,104 +41,179 @@ class _AmbulanceSettingsPageState
   /* ================= FETCH PROFILE ================= */
 
   Future<void> _fetchProfile() async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-            "$baseUrl/api/auth/ambulance/${widget.ambulanceId}"),
-      );
+    final response = await http.get(
+      Uri.parse(
+          "$baseUrl/api/auth/ambulance/${widget.ambulanceId}"),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        setState(() {
-          nameController.text = data["fullName"] ?? "";
-          emailController.text = data["email"] ?? "";
-          phoneController.text = data["phone"] ?? "";
-          licenseController.text =
-              data["licenseNumber"] ?? "";
-          vehicleController.text =
-              data["vehicleNumber"] ?? "";
-          status = data["status"] ?? "";
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => isLoading = false);
+      setState(() {
+        nameController.text = data["fullName"] ?? "";
+        emailController.text = data["email"] ?? "";
+        phoneController.text = data["phone"] ?? "";
+        licenseController.text =
+            data["licenseNumber"] ?? "";
+        vehicleController.text =
+            data["vehicleNumber"] ?? "";
+        status = data["status"] ?? "";
+        isLoading = false;
+      });
     }
   }
 
   /* ================= UPDATE PROFILE ================= */
 
   Future<void> _updateProfile() async {
-    try {
-      final response = await http.put(
-        Uri.parse(
-            "$baseUrl/api/auth/ambulance/update/${widget.ambulanceId}"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "fullName": nameController.text,
-          "licenseNumber": licenseController.text,
-          "vehicleNumber": vehicleController.text,
-        }),
-      );
+    final response = await http.put(
+      Uri.parse(
+          "$baseUrl/api/auth/ambulance/update/${widget.ambulanceId}"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "fullName": nameController.text,
+        "licenseNumber": licenseController.text,
+        "vehicleNumber": vehicleController.text,
+      }),
+    );
 
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Profile updated successfully")),
-        );
-        setState(() => isEditing = false);
-      }
-    } catch (_) {}
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile Updated")),
+      );
+      setState(() => isEditing = false);
+    }
   }
 
-  /* ================= CHANGE PASSWORD ================= */
+  /* ================= PASSWORD DIALOG ================= */
 
-  Future<void> _changePassword() async {
+  void _showPasswordDialog() {
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+    bool obscureNew = true;
+    bool obscureConfirm = true;
 
-    final password = newPasswordController.text;
-    final confirm = confirmPasswordController.text;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text("Update Password"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: newController,
+                    obscureText: obscureNew,
+                    decoration: InputDecoration(
+                      labelText: "New Password",
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureNew
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setStateDialog(() {
+                            obscureNew = !obscureNew;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: confirmController,
+                    obscureText: obscureConfirm,
+                    decoration: InputDecoration(
+                      labelText: "Confirm Password",
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setStateDialog(() {
+                            obscureConfirm =
+                                !obscureConfirm;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Update"),
+                  onPressed: () async {
 
-    final passwordRegex =
-        RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$');
+                    final password =
+                        newController.text;
+                    final confirm =
+                        confirmController.text;
 
-    if (!passwordRegex.hasMatch(password)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                "Password must be 8+ chars with uppercase, lowercase, number & special character")),
-      );
-      return;
-    }
+                    final passwordRegex =
+                        RegExp(
+                            r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$');
 
-    if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Passwords do not match")),
-      );
-      return;
-    }
+                    if (!passwordRegex
+                        .hasMatch(password)) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                "Password must be 8+ chars with uppercase, lowercase, number & special character")),
+                      );
+                      return;
+                    }
 
-    try {
-      final response = await http.put(
-        Uri.parse(
-            "$baseUrl/api/auth/ambulance/change-password/${widget.ambulanceId}"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "newPassword": password,
-        }),
-      );
+                    if (password != confirm) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                "Passwords do not match")),
+                      );
+                      return;
+                    }
 
-      if (response.statusCode == 200) {
-        newPasswordController.clear();
-        confirmPasswordController.clear();
+                    final response = await http.put(
+                      Uri.parse(
+                          "$baseUrl/api/auth/ambulance/change-password/${widget.ambulanceId}"),
+                      headers: {
+                        "Content-Type":
+                            "application/json"
+                      },
+                      body: jsonEncode({
+                        "newPassword": password,
+                      }),
+                    );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Password updated successfully")),
+                    if (response.statusCode ==
+                        200) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                "Password Updated")),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         );
-      }
-    } catch (_) {}
+      },
+    );
   }
 
   /* ================= LOGOUT ================= */
@@ -165,15 +233,14 @@ class _AmbulanceSettingsPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEFEFEF),
       appBar: AppBar(
         backgroundColor: Colors.red,
         title: const Text("Settings"),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(
-              isEditing ? Icons.close : Icons.edit,
-            ),
+            icon: const Icon(Icons.edit),
             onPressed: () {
               setState(() {
                 isEditing = !isEditing;
@@ -183,64 +250,76 @@ class _AmbulanceSettingsPageState
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
 
-                  _buildField(
-                      "Full Name",
-                      nameController,
-                      isEditing),
+                  const Text(
+                    "Profile",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight:
+                            FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
 
-                  _buildField(
-                      "Email",
-                      emailController,
-                      false),
-
-                  _buildField(
-                      "Phone",
-                      phoneController,
-                      false),
-
-                  _buildField(
-                      "License Number",
-                      licenseController,
-                      isEditing),
-
-                  _buildField(
-                      "Vehicle Number",
-                      vehicleController,
-                      isEditing),
+                  _buildField("Full Name",
+                      nameController, isEditing),
+                  _buildField("Email",
+                      emailController, false),
+                  _buildField("Phone",
+                      phoneController, false),
+                  _buildField("License Number",
+                      licenseController, isEditing),
+                  _buildField("Vehicle Number",
+                      vehicleController, isEditing),
 
                   const SizedBox(height: 10),
 
-                  Row(
-                    children: [
-                      const Text("Status: "),
-                      Chip(
-                        label: Text(status),
-                        backgroundColor:
-                            status == "approved"
-                                ? Colors.green.shade100
-                                : Colors.orange.shade100,
-                      ),
-                    ],
+                  Container(
+                    padding:
+                        const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius:
+                          BorderRadius.circular(
+                              20),
+                    ),
+                    child: Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .spaceBetween,
+                      children: [
+                        const Text("Status"),
+                        Text(
+                          status.toUpperCase(),
+                          style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight:
+                                  FontWeight.bold),
+                        )
+                      ],
+                    ),
                   ),
 
                   if (isEditing)
                     Padding(
                       padding:
-                          const EdgeInsets.only(top: 15),
+                          const EdgeInsets.only(
+                              top: 20),
                       child: ElevatedButton(
                         style:
                             ElevatedButton.styleFrom(
                           backgroundColor:
                               Colors.red,
                           minimumSize:
-                              const Size.fromHeight(
-                                  50),
+                              const Size
+                                  .fromHeight(50),
                         ),
                         onPressed: _updateProfile,
                         child: const Text(
@@ -248,65 +327,37 @@ class _AmbulanceSettingsPageState
                       ),
                     ),
 
-                  const Divider(height: 40),
-
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Change Password",
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight:
-                              FontWeight.bold),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  _buildPasswordField(
-                      "New Password",
-                      newPasswordController,
-                      obscureNew, () {
-                    setState(() {
-                      obscureNew = !obscureNew;
-                    });
-                  }),
-
-                  _buildPasswordField(
-                      "Confirm Password",
-                      confirmPasswordController,
-                      obscureConfirm, () {
-                    setState(() {
-                      obscureConfirm =
-                          !obscureConfirm;
-                    });
-                  }),
-
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 30),
 
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                    style:
+                        ElevatedButton.styleFrom(
                       backgroundColor:
                           Colors.blue,
                       minimumSize:
-                          const Size.fromHeight(50),
+                          const Size
+                              .fromHeight(50),
                     ),
-                    onPressed: _changePassword,
+                    onPressed:
+                        _showPasswordDialog,
                     child:
                         const Text("Update Password"),
                   ),
 
-                  const Divider(height: 40),
+                  const SizedBox(height: 20),
 
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                    style:
+                        ElevatedButton.styleFrom(
                       backgroundColor:
                           Colors.red,
                       minimumSize:
-                          const Size.fromHeight(50),
+                          const Size
+                              .fromHeight(50),
                     ),
                     onPressed: _logout,
-                    child: const Text("Logout"),
+                    child:
+                        const Text("Logout"),
                   ),
                 ],
               ),
@@ -314,55 +365,36 @@ class _AmbulanceSettingsPageState
     );
   }
 
-  Widget _buildField(
-      String label,
+  Widget _buildField(String label,
       TextEditingController controller,
       bool enabled) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextField(
-        controller: controller,
-        readOnly: !enabled,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor:
-              enabled ? Colors.white : Colors.grey.shade200,
-          border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPasswordField(
-      String label,
-      TextEditingController controller,
-      bool obscure,
-      VoidCallback toggle) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(12),
-          ),
-          suffixIcon: IconButton(
-            icon: Icon(
-              obscure
-                  ? Icons.visibility_off
-                  : Icons.visibility,
+      padding:
+          const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(label),
+          const SizedBox(height: 6),
+          TextField(
+            controller: controller,
+            readOnly: !enabled,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey.shade300,
+              border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(30),
+              ),
+              enabledBorder:
+                  OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(30),
+              ),
             ),
-            onPressed: toggle,
           ),
-        ),
+        ],
       ),
     );
   }

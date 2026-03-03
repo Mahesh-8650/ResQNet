@@ -44,7 +44,31 @@ const citizenEmergencySchema = new mongoose.Schema(
       ref: "Ambulance",
       default: null,
     },
+    
+    offeredAt: {
+  type: Date,
+  default: null,
+},
 
+acceptedAt: {
+  type: Date,
+  default: null,
+},
+
+completedAt: {
+  type: Date,
+  default: null,
+},
+
+responseTimeInSeconds: {
+  type: Number,
+  default: 0,
+},
+
+distanceCoveredKm: {
+  type: Number,
+  default: 0,
+},
     status: {
       type: String,
       enum: [

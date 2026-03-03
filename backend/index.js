@@ -11,6 +11,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import citizenEmergencyRoutes from "./routes/citizenEmergencyRoutes.js";
+import performanceRoutes from "./routes/performanceRoutes.js";
 
 /* ===================================================== */
 /* ================= EXPRESS APP ======================= */
@@ -63,7 +64,7 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/citizen-emergency", citizenEmergencyRoutes);
-
+app.use("/api/performance",performanceRoutes);
 /* ===================================================== */
 /* ================= TEST ROUTE ======================== */
 /* ===================================================== */
