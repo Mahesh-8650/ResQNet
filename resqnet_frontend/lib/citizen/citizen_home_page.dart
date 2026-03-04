@@ -23,6 +23,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
   late AnimationController _controller;
 
+  bool isSendingRequest = false;
   double? latitude;
   double? longitude;
 
@@ -105,7 +106,11 @@ class _CitizenHomePageState extends State<CitizenHomePage>
   /* ================= SOS REQUEST ================= */
 
   Future<void> triggerSOS() async {
+    if (isSendingRequest) return;
 
+setState(() {
+  isSendingRequest = true;
+});
     await getLocation();
 
     if (latitude == null || longitude == null) {
@@ -274,7 +279,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
                         ],
                       ),
                       child: ElevatedButton(
-                        onPressed: triggerSOS,
+                        onPressed: isSendingRequest ? null : triggerSOS,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: baseRedColor,
                           shape: const CircleBorder(),

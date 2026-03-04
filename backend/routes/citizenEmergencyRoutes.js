@@ -20,6 +20,17 @@ router.post("/create", async (req, res) => {
       longitude,
       hospitalId,
     } = req.body;
+    // 🚨 Prevent duplicate active emergency
+const existingEmergency = await CitizenEmergency.findOne({
+  patientPhone: patientPhone,
+  status: { $in: ["pending", "offered", "assigned"] },
+});
+
+if (existingEmergency) {
+  return res.status(400).json({
+    message: "Emergency request already active",
+  });
+}
 
     if (!patientName || !patientPhone || !emergencyType || !latitude || !longitude) {
       return res.status(400).json({
