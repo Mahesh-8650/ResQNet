@@ -6,6 +6,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../hospital/hospital_home_screen.dart';
 import '../ambulance/ambulance_home_screen.dart';
+import '../citizen/citizen_home_page.dart';
+
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -127,9 +129,17 @@ class _OtpScreenState extends State<OtpScreen> {
           );
         }
 
-        else {
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
+        else if (role == "citizen") {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CitizenHomePage(
+        userName: data["account"]?["fullName"] ?? "User",
+        phone: data["account"]?["phone"] ?? widget.phone,
+      ),
+    ),
+  );
+}
 
       } else {
         _showDialog("Error", data["message"] ?? "Invalid OTP");

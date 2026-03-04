@@ -1,0 +1,208 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class CitizenRequestStatusPage extends StatefulWidget {
+
+  final String phone;
+
+  const CitizenRequestStatusPage({
+    super.key,
+    required this.phone,
+  });
+
+  @override
+  State<CitizenRequestStatusPage> createState() =>
+      _CitizenRequestStatusPageState();
+}
+
+class _CitizenRequestStatusPageState
+    extends State<CitizenRequestStatusPage> {
+
+  final String baseUrl =
+      "https://resqnet-backend-1xe3.onrender.com";
+
+  Timer? timer;
+
+  bool loading = true;
+
+  String status = "pending";
+
+  String driverName = "";
+  String vehicleNumber = "";
+  String hospitalName = "";
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchStatus();
+
+    timer = Timer.periodic(
+      const Duration(seconds: 3),
+      (_) => fetchStatus(),
+    );
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  /* ================= FETCH STATUS ================= */
+
+  Future<void> fetchStatus() async {
+
+    try {
+
+      final response = await http.get(
+        Uri.parse(
+          "$baseUrl/api/citizen-emergency/status/${widget.phone}",
+        ),
+      );
+
+      if (response.statusCode == 200) {
+
+        final data = jsonDecode(response.body);
+
+        setState(() {
+
+          loading = false;
+
+          status = data["status"] ?? "pending";
+
+          driverName =
+              data["ambulance"]?["fullName"] ?? "";
+
+          vehicleNumber =
+              data["ambulance"]?["vehicleNumber"] ?? "";
+
+          hospitalName =
+              data["hospital"]?["hospitalName"] ?? "";
+        });
+
+      }
+
+    } catch (e) {
+
+      setState(() {
+        loading = false;
+      });
+
+    }
+  }
+
+  /* ================= UI ================= */
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+
+      appBar: AppBar(
+        title: const Text("Emergency Status"),
+        backgroundColor: Colors.red,
+      ),
+
+      body: Center(
+
+        child: loading
+            ? const CircularProgressIndicator()
+
+            : Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+
+                    const Icon(
+                      Icons.local_hospital,
+                      size: 80,
+                      color: Colors.red,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    if (status == "pending") ...[
+                      const Text(
+                        "🚑 Requesting Ambulance...",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      const Text(
+                        "Finding nearest driver...",
+                        style: TextStyle(fontSize: 16),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      const CircularProgressIndicator(),
+                    ],
+
+                    if (status == "assigned") ...[
+                      const Text(
+                        "🚑 Ambulance Assigned",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      Card(
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+
+                              Row(
+                                children: [
+                                  const Icon(Icons.person),
+                                  const SizedBox(width: 10),
+                                  Text("Driver: $driverName"),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              Row(
+                                children: [
+                                  const Icon(Icons.local_shipping),
+                                  const SizedBox(width: 10),
+                                  Text("Vehicle: $vehicleNumber"),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              Row(
+                                children: [
+                                  const Icon(Icons.local_hospital),
+                                  const SizedBox(width: 10),
+                                  Text("Hospital: $hospitalName"),
+                                ],
+                              ),
+
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    ],
+
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}

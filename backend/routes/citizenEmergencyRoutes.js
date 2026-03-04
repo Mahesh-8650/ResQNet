@@ -14,13 +14,14 @@ router.post("/create", async (req, res) => {
   try {
     const {
       patientName,
+      patientPhone,
       emergencyType,
       latitude,
       longitude,
       hospitalId,
     } = req.body;
 
-    if (!patientName || !emergencyType || !latitude || !longitude) {
+    if (!patientName || !patientPhone || !emergencyType || !latitude || !longitude) {
       return res.status(400).json({
         message: "Missing required fields",
       });
@@ -37,6 +38,7 @@ router.post("/create", async (req, res) => {
 
     const emergency = await CitizenEmergency.create({
       patientName,
+      patientPhone,
       emergencyType,
       patientLocation: {
   type: "Point",
@@ -299,6 +301,41 @@ router.get("/history/:ambulanceId", async (req, res) => {
 
   } catch (error) {
     console.error("History fetch error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ===================================================== */
+/* 🚑 GET EMERGENCY STATUS FOR CITIZEN */
+/* ===================================================== */
+
+router.get("/status/:phone", async (req, res) => {
+  try {
+
+    const { phone } = req.params;
+
+    const emergency = await CitizenEmergency.findOne({
+      patientPhone: phone,
+      status: { $in: ["pending", "offered", "assigned"] }
+    })
+    .populate("ambulanceId", "fullName vehicleNumber")
+    .populate("hospitalId", "hospitalName")
+    .sort({ createdAt: -1 });
+
+    if (!emergency) {
+      return res.status(200).json({
+        status: "none"
+      });
+    }
+
+    return res.status(200).json({
+      status: emergency.status,
+      ambulance: emergency.ambulanceId,
+      hospital: emergency.hospitalId
+    });
+
+  } catch (error) {
+    console.error("Citizen status fetch error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 });

@@ -1,0 +1,419 @@
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'citizen_request_status_page.dart';
+
+class CitizenHomePage extends StatefulWidget {
+  final String userName;
+  final String phone;
+
+  const CitizenHomePage({
+    super.key,
+    required this.userName,
+    required this.phone,
+  });
+
+  @override
+  State<CitizenHomePage> createState() => _CitizenHomePageState();
+}
+
+class _CitizenHomePageState extends State<CitizenHomePage>
+    with SingleTickerProviderStateMixin {
+
+  late AnimationController _controller;
+
+  double? latitude;
+  double? longitude;
+
+  String selectedHospital = "Not Selected";
+
+  final List<Map<String, String>> hospitals = [
+    {
+      "name": "City General Hospital",
+      "location": "Downtown",
+      "distance": "2.4 km"
+    },
+    {
+      "name": "Sunrise Medical Center",
+      "location": "Westside",
+      "distance": "4.1 km"
+    },
+    {
+      "name": "Green Valley Hospital",
+      "location": "North Avenue",
+      "distance": "6.8 km"
+    },
+  ];
+
+  final String baseUrl =
+      "https://resqnet-backend-1xe3.onrender.com";
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 800),
+        )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /* ================= GET LOCATION ================= */
+
+  Future<void> getLocation() async {
+
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enable location services")),
+      );
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location permission permanently denied")),
+      );
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    latitude = position.latitude;
+    longitude = position.longitude;
+  }
+
+  /* ================= SOS REQUEST ================= */
+
+  Future<void> triggerSOS() async {
+
+    await getLocation();
+
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location not available")),
+      );
+      return;
+    }
+
+    try {
+
+      final response = await http.post(
+        Uri.parse("$baseUrl/api/citizen-emergency/create"),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "patientName": widget.userName,
+          "patientPhone": widget.phone,
+          "emergencyType": "General Emergency",
+          "latitude": latitude,
+          "longitude": longitude,
+          "hospitalId":
+              selectedHospital == "Not Selected"
+                  ? null
+                  : selectedHospital,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CitizenRequestStatusPage(
+        phone: widget.phone,
+      ),
+    ),
+  );
+
+} else {
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to send emergency request")),
+        );
+
+      }
+
+    } catch (e) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Server connection failed")),
+      );
+
+    }
+
+  }
+
+  /* ================= HOSPITAL PAGE ================= */
+
+  Future<void> openHospitalSelectionPage() async {
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HospitalSelectionPage(
+          hospitals: hospitals,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        selectedHospital = result.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    const Color baseRedColor = Color(0xFFFF0000);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            /// HEADER
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              color: Colors.red,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+
+                  Icon(Icons.arrow_back, color: Colors.white),
+
+                  Text(
+                    "ResQNet",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold),
+                  ),
+
+                  Icon(Icons.settings, color: Colors.white),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// WELCOME
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Welcome, ${widget.userName.toUpperCase()}",
+                style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            /// SELECTED HOSPITAL
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Selected Hospital: $selectedHospital",
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+
+            /// SOS BUTTON
+            Expanded(
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+
+                    double spread = 30 * _controller.value;
+                    double opacity = 0.7 * (1 - _controller.value);
+
+                    return Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color.fromARGB(
+                                (opacity * 255).round(),
+                                255,
+                                0,
+                                0),
+                            spreadRadius: spread,
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: triggerSOS,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: baseRedColor,
+                          shape: const CircleBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          "SOS",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            /// SELECT HOSPITAL BUTTON
+            Center(
+              child: SizedBox(
+                width: 180,
+                child: ElevatedButton(
+                  onPressed: openHospitalSelectionPage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  child: const Text(
+                    "Select Hospital",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* ===================================================== */
+/* ================= HOSPITAL PAGE ====================== */
+/* ===================================================== */
+
+class HospitalSelectionPage extends StatelessWidget {
+
+  final List<Map<String, String>> hospitals;
+
+  const HospitalSelectionPage({
+    super.key,
+    required this.hospitals,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Select Hospital"),
+        backgroundColor: Colors.red,
+      ),
+
+      body: ListView.builder(
+        padding: const EdgeInsets.all(10),
+        itemCount: hospitals.length,
+        itemBuilder: (context, index) {
+
+          final hospital = hospitals[index];
+
+          return Card(
+            elevation: 4,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+
+                  const Icon(
+                    Icons.local_hospital,
+                    color: Colors.red,
+                    size: 28,
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  /// HOSPITAL DETAILS
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        Text(
+                          hospital["name"] ?? "",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+
+                        Text("📍 ${hospital["location"] ?? ""}"),
+
+                        Text("🚗 ${hospital["distance"] ?? ""}"),
+                      ],
+                    ),
+                  ),
+
+                  /// SELECT BUTTON
+                  SizedBox(
+                    width: 90,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(
+                          context,
+                          hospital["name"] ?? "",
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                      child: const Text(
+                        "Select",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

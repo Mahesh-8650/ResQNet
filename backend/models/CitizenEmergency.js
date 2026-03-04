@@ -20,6 +20,10 @@ const citizenEmergencySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    patientPhone: {
+      type: String,
+      required: true,
+    },
 
     emergencyType: {
       type: String,
