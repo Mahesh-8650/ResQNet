@@ -129,13 +129,18 @@ class _OtpScreenState extends State<OtpScreen> {
           );
         }
 
-        else if (role == "citizen") {
+       else if (role == "citizen") {
   Navigator.pushReplacement(
     context,
     MaterialPageRoute(
       builder: (_) => CitizenHomePage(
+        citizenId: data["account"]?["_id"] ?? "",
         userName: data["account"]?["fullName"] ?? "User",
+        email: data["account"]?["email"] ?? "",
         phone: data["account"]?["phone"] ?? widget.phone,
+        bloodGroup: data["account"]?["bloodGroup"] ?? "",
+        dob: data["account"]?["dob"] ?? "",
+        emergencyContact: data["account"]?["emergencyContact"] ?? "",
       ),
     ),
   );

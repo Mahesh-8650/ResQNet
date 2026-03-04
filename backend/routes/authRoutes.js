@@ -1001,5 +1001,73 @@ router.put("/ambulance/change-password/:id", async (req, res) => {
   }
 });
 
+/* ===================================================== */
+/* 👤 UPDATE CITIZEN PROFILE */
+/* ===================================================== */
+
+router.put("/citizen/update/:id", async (req, res) => {
+  try {
+
+    const { fullName, bloodGroup, dob, emergencyContact } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        fullName,
+        bloodGroup,
+        dob,
+        emergencyContact
+      },
+      { new: true }
+    );
+
+    res.status(200).json(updatedUser);
+
+  } catch (error) {
+
+    console.error("Citizen update error:", error);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
+  }
+});
+
+/* ===================================================== */
+/* 🔑 CHANGE CITIZEN PASSWORD */
+/* ===================================================== */
+
+router.put("/citizen/change-password/:id", async (req, res) => {
+  try {
+
+    const { newPassword } = req.body;
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    user.password = newPassword;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Password updated successfully"
+    });
+
+  } catch (error) {
+
+    console.error("Password update error:", error);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
+  }
+});
 
 export default router;

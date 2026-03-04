@@ -3,15 +3,26 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'citizen_request_status_page.dart';
+import 'citizen_settings_page.dart';
 
 class CitizenHomePage extends StatefulWidget {
+  final String citizenId;
   final String userName;
+  final String email;
   final String phone;
+  final String bloodGroup;
+  final String dob;
+  final String emergencyContact;
 
   const CitizenHomePage({
     super.key,
-    required this.userName,
-    required this.phone,
+  required this.citizenId,
+  required this.userName,
+  required this.email,
+  required this.phone,
+  required this.bloodGroup,
+  required this.dob,
+  required this.emergencyContact,
   });
 
   @override
@@ -79,7 +90,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
             "id": h["_id"].toString(),
             "name": h["hospitalName"].toString(),
             "location": h["address"].toString(),
-            "distance": "${h["distance"].toStringAsFixed(1)} km",
+            "distance": "${double.parse(h["distance"].toString()).toStringAsFixed(1)} km",
           }),
         );
       });
@@ -240,7 +251,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
                 vertical: 14,
               ),
               color: Colors.red,
-              child: const Row(
+              child:  Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
 
@@ -254,7 +265,28 @@ class _CitizenHomePageState extends State<CitizenHomePage>
                         fontWeight: FontWeight.bold),
                   ),
 
-                  Icon(Icons.settings, color: Colors.white),
+                  IconButton(
+  icon: const Icon(Icons.settings, color: Colors.white),
+  onPressed: () {
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CitizenSettingsPage(
+          citizenId: widget.citizenId,
+          userName: widget.userName,
+          email: widget.email,
+          phone: widget.phone,
+          bloodGroup: widget.bloodGroup,
+          dob: widget.dob,
+          emergencyContact: widget.emergencyContact,
+        ),
+      ),
+    );
+
+  },
+),
+
                 ],
               ),
             ),
