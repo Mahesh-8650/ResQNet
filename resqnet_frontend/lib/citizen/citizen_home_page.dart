@@ -71,13 +71,15 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
       final data = jsonDecode(response.body);
 
+      print("Hospital API response : $data");
+
       setState(() {
         hospitals = List<Map<String, String>>.from(
           data["hospitals"].map((h) => {
             "id": h["_id"].toString(),
             "name": h["hospitalName"].toString(),
-            "location": "Nearby",
-            "distance": "",
+            "location": h["address"].toString(),
+            "distance": "${h["distance"].toStringAsFixed(1)} km",
           }),
         );
       });
@@ -119,6 +121,9 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
     latitude = position.latitude;
     longitude = position.longitude;
+
+    print("User latitude : $latitude");
+    print("User longitude : $longitude");
 
     await fetchHospitals();
   }
@@ -191,24 +196,29 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
   Future<void> openHospitalSelectionPage() async {
 
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HospitalSelectionPage(
-          hospitals: hospitals,
-        ),
-      ),
+  if (hospitals.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Hospitals are still loading. Please wait...")),
     );
-
-    if (result != null) {
-
-      setState(() {
-        selectedHospital = result["name"];
-        selectedHospitalId = result["id"];
-      });
-
-    }
+    return;
   }
+
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => HospitalSelectionPage(
+        hospitals: hospitals,
+      ),
+    ),
+  );
+
+  if (result != null) {
+    setState(() {
+      selectedHospital = result["name"];
+      selectedHospitalId = result["id"];
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
