@@ -24,28 +24,14 @@ class _CitizenHomePageState extends State<CitizenHomePage>
   late AnimationController _controller;
 
   bool isSendingRequest = false;
+
   double? latitude;
   double? longitude;
 
   String selectedHospital = "Not Selected";
+  String? selectedHospitalId;
 
-  final List<Map<String, String>> hospitals = [
-    {
-      "name": "City General Hospital",
-      "location": "Downtown",
-      "distance": "2.4 km"
-    },
-    {
-      "name": "Sunrise Medical Center",
-      "location": "Westside",
-      "distance": "4.1 km"
-    },
-    {
-      "name": "Green Valley Hospital",
-      "location": "North Avenue",
-      "distance": "6.8 km"
-    },
-  ];
+  List<Map<String, String>> hospitals = [];
 
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
@@ -59,12 +45,43 @@ class _CitizenHomePageState extends State<CitizenHomePage>
           vsync: this,
           duration: const Duration(milliseconds: 800),
         )..repeat();
+
+    getLocation();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /* ================= FETCH HOSPITALS ================= */
+
+  Future<void> fetchHospitals() async {
+
+    if (latitude == null || longitude == null) return;
+
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/hospitals/nearest?latitude=$latitude&longitude=$longitude",
+      ),
+    );
+
+    if (response.statusCode == 200) {
+
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        hospitals = List<Map<String, String>>.from(
+          data["hospitals"].map((h) => {
+            "id": h["_id"].toString(),
+            "name": h["hospitalName"].toString(),
+            "location": "Nearby",
+            "distance": "",
+          }),
+        );
+      });
+    }
   }
 
   /* ================= GET LOCATION ================= */
@@ -97,20 +114,25 @@ class _CitizenHomePageState extends State<CitizenHomePage>
     }
 
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
 
     latitude = position.latitude;
     longitude = position.longitude;
+
+    await fetchHospitals();
   }
 
   /* ================= SOS REQUEST ================= */
 
   Future<void> triggerSOS() async {
+
     if (isSendingRequest) return;
 
-setState(() {
-  isSendingRequest = true;
-});
+    setState(() {
+      isSendingRequest = true;
+    });
+
     await getLocation();
 
     if (latitude == null || longitude == null) {
@@ -133,25 +155,22 @@ setState(() {
           "emergencyType": "General Emergency",
           "latitude": latitude,
           "longitude": longitude,
-          "hospitalId":
-              selectedHospital == "Not Selected"
-                  ? null
-                  : selectedHospital,
+          "hospitalId": selectedHospitalId,
         }),
       );
 
       if (response.statusCode == 201) {
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CitizenRequestStatusPage(
-        phone: widget.phone,
-      ),
-    ),
-  );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CitizenRequestStatusPage(
+              phone: widget.phone,
+            ),
+          ),
+        );
 
-} else {
+      } else {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to send emergency request")),
@@ -166,10 +185,9 @@ setState(() {
       );
 
     }
-
   }
 
-  /* ================= HOSPITAL PAGE ================= */
+  /* ================= OPEN HOSPITAL PAGE ================= */
 
   Future<void> openHospitalSelectionPage() async {
 
@@ -183,9 +201,12 @@ setState(() {
     );
 
     if (result != null) {
+
       setState(() {
-        selectedHospital = result.toString();
+        selectedHospital = result["name"];
+        selectedHospitalId = result["id"];
       });
+
     }
   }
 
@@ -372,7 +393,6 @@ class HospitalSelectionPage extends StatelessWidget {
 
                   const SizedBox(width: 12),
 
-                  /// HOSPITAL DETAILS
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,15 +413,11 @@ class HospitalSelectionPage extends StatelessWidget {
                     ),
                   ),
 
-                  /// SELECT BUTTON
                   SizedBox(
                     width: 90,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pop(
-                          context,
-                          hospital["name"] ?? "",
-                        );
+                        Navigator.pop(context, hospital);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,

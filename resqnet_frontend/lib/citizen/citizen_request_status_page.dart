@@ -23,9 +23,9 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
   Timer? timer;
 
-  bool loading = false; // FIXED
+  bool loading = true;
 
-  String status = "pending";
+  String status = "";
 
   String driverName = "";
   String vehicleNumber = "";
@@ -66,6 +66,8 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
         setState(() {
 
+          loading = false;
+
           status = data["status"] ?? "pending";
 
           driverName =
@@ -81,7 +83,9 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
     } catch (e) {
 
-      // ignore errors silently
+      setState(() {
+        loading = false;
+      });
 
     }
   }
@@ -102,102 +106,104 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
         body: Center(
 
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+          child: loading || status.isEmpty
+              ? const CircularProgressIndicator()
 
-                const Icon(
-                  Icons.local_hospital,
-                  size: 80,
-                  color: Colors.red,
-                ),
+              : Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
 
-                const SizedBox(height: 20),
-
-                /// WAITING FOR DRIVER
-                if (status == "pending") ...[
-                  const Text(
-                    "🚑 Requesting Ambulance...",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Text(
-                    "Finding nearest driver...",
-                    style: TextStyle(fontSize: 16),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  const CircularProgressIndicator(),
-                ],
-
-                /// DRIVER ASSIGNED
-                if (status == "assigned") ...[
-                  const Text(
-                    "🚑 Ambulance Assigned",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-
-                          Row(
-                            children: [
-                              const Icon(Icons.person),
-                              const SizedBox(width: 10),
-                              Text("Driver: $driverName"),
-                            ],
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.local_shipping),
-                              const SizedBox(width: 10),
-                              Text("Vehicle: $vehicleNumber"),
-                            ],
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.local_hospital),
-                              const SizedBox(width: 10),
-                              Text("Hospital: $hospitalName"),
-                            ],
-                          ),
-
-                        ],
+                      const Icon(
+                        Icons.local_hospital,
+                        size: 80,
+                        color: Colors.red,
                       ),
-                    ),
+
+                      const SizedBox(height: 20),
+
+                      /// WAITING FOR DRIVER
+                      if (status == "pending" || status.isEmpty || status == "offered") ...[
+                        const Text(
+                          "🚑 Requesting Ambulance...",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        const Text(
+                          "Finding nearest driver...",
+                          style: TextStyle(fontSize: 16),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        const CircularProgressIndicator(),
+                      ],
+
+                      /// DRIVER ASSIGNED
+                      if (status == "assigned") ...[
+                        const Text(
+                          "🚑 Ambulance Assigned",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person),
+                                    const SizedBox(width: 10),
+                                    Text("Driver: $driverName"),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.local_shipping),
+                                    const SizedBox(width: 10),
+                                    Text("Vehicle: $vehicleNumber"),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.local_hospital),
+                                    const SizedBox(width: 10),
+                                    Text("Hospital: $hospitalName"),
+                                  ],
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+
+                    ],
                   ),
-                ],
-
-              ],
-            ),
-          ),
-
+                ),
         ),
       ),
     );

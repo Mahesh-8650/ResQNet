@@ -12,6 +12,7 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import citizenEmergencyRoutes from "./routes/citizenEmergencyRoutes.js";
 import performanceRoutes from "./routes/performanceRoutes.js";
+import hospitalRoutes from "./routes/hospitalRoutes.js";
 
 /* ===================================================== */
 /* ================= EXPRESS APP ======================= */
@@ -65,6 +66,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/citizen-emergency", citizenEmergencyRoutes);
 app.use("/api/performance",performanceRoutes);
+app.use("/api/hospitals", hospitalRoutes);
 /* ===================================================== */
 /* ================= TEST ROUTE ======================== */
 /* ===================================================== */
