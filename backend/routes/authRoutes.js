@@ -1043,6 +1043,12 @@ router.put("/citizen/change-password/:id", async (req, res) => {
 
     const { newPassword } = req.body;
 
+    if (!newPassword) {
+      return res.status(400).json({
+        message: "New password required"
+      });
+    }
+
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -1051,7 +1057,10 @@ router.put("/citizen/change-password/:id", async (req, res) => {
       });
     }
 
-    user.password = newPassword;
+    // 🔐 Hash password before saving
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
 
     await user.save();
 

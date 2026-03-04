@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import '../welcome/welcome_screen.dart';
 
 class CitizenSettingsPage extends StatefulWidget {
-
   final String citizenId;
   final String userName;
   final String email;
@@ -29,8 +28,7 @@ class CitizenSettingsPage extends StatefulWidget {
       _CitizenSettingsPageState();
 }
 
-class _CitizenSettingsPageState
-    extends State<CitizenSettingsPage> {
+class _CitizenSettingsPageState extends State<CitizenSettingsPage> {
 
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
@@ -38,11 +36,21 @@ class _CitizenSettingsPageState
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
-  final bloodController = TextEditingController();
-  final dobController = TextEditingController();
   final emergencyController = TextEditingController();
 
+  String selectedBloodGroup = "O+";
+  String selectedCountryCode = "+91";
+  DateTime? selectedDob;
+
   bool isEditing = false;
+
+  final List<String> bloodGroups = [
+    "A+","A-","B+","B-","AB+","AB-","O+","O-"
+  ];
+
+  final List<String> countryCodes = [
+    "+91","+1","+44","+971"
+  ];
 
   @override
   void initState() {
@@ -51,12 +59,67 @@ class _CitizenSettingsPageState
     nameController.text = widget.userName;
     emailController.text = widget.email;
     phoneController.text = widget.phone;
-    bloodController.text = widget.bloodGroup;
-    dobController.text = widget.dob;
-    emergencyController.text = widget.emergencyContact;
+
+    /* ================= BLOOD GROUP ================= */
+
+    if (widget.bloodGroup.isNotEmpty) {
+      selectedBloodGroup = widget.bloodGroup;
+    }
+
+    /* ================= DOB ================= */
+
+    if (widget.dob.isNotEmpty) {
+      try {
+        final parts = widget.dob.split("-");
+        selectedDob = DateTime(
+          int.parse(parts[2]),
+          int.parse(parts[1]),
+          int.parse(parts[0]),
+        );
+      } catch (_) {}
+    }
+
+    /* ================= EMERGENCY CONTACT ================= */
+
+    if (widget.emergencyContact.contains(" ")) {
+      final parts = widget.emergencyContact.split(" ");
+      selectedCountryCode = parts[0];
+      emergencyController.text = parts[1];
+    } else {
+      emergencyController.text = widget.emergencyContact;
+    }
   }
 
-  /* ================= UPDATE PROFILE ================= */
+  /* ===================================================== */
+  /* DATE PICKER */
+  /* ===================================================== */
+
+  Future<void> _pickDate() async {
+
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDob ?? DateTime(2000),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedDob = picked;
+      });
+    }
+  }
+
+  String get formattedDob {
+
+    if (selectedDob == null) return "";
+
+    return "${selectedDob!.day}-${selectedDob!.month}-${selectedDob!.year}";
+  }
+
+  /* ===================================================== */
+  /* UPDATE PROFILE */
+  /* ===================================================== */
 
   Future<void> _updateProfile() async {
 
@@ -66,9 +129,10 @@ class _CitizenSettingsPageState
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "fullName": nameController.text,
-        "bloodGroup": bloodController.text,
-        "dob": dobController.text,
-        "emergencyContact": emergencyController.text,
+        "bloodGroup": selectedBloodGroup,
+        "dob": formattedDob,
+        "emergencyContact":
+            "$selectedCountryCode ${emergencyController.text}",
       }),
     );
 
@@ -84,7 +148,9 @@ class _CitizenSettingsPageState
     }
   }
 
-  /* ================= PASSWORD DIALOG ================= */
+  /* ===================================================== */
+  /* PASSWORD DIALOG */
+  /* ===================================================== */
 
   void _showPasswordDialog() {
 
@@ -225,7 +291,9 @@ class _CitizenSettingsPageState
     );
   }
 
-  /* ================= LOGOUT ================= */
+  /* ===================================================== */
+  /* LOGOUT */
+  /* ===================================================== */
 
   void _logout() {
 
@@ -238,7 +306,9 @@ class _CitizenSettingsPageState
     );
   }
 
-  /* ================= UI ================= */
+  /* ===================================================== */
+  /* UI */
+  /* ===================================================== */
 
   @override
   Widget build(BuildContext context) {
@@ -280,25 +350,118 @@ class _CitizenSettingsPageState
 
             const SizedBox(height: 20),
 
-            _buildField(
-                "Full Name", nameController, isEditing),
+            _buildField("Full Name", nameController, isEditing),
+            _buildField("Email", emailController, false),
+            _buildField("Phone", phoneController, false),
 
-            _buildField(
-                "Email", emailController, false),
+            /* ================= BLOOD GROUP ================= */
 
-            _buildField(
-                "Phone", phoneController, false),
+            const Text("Blood Group"),
+            const SizedBox(height: 6),
 
-            _buildField(
-                "Blood Group", bloodController, isEditing),
+            DropdownButtonFormField<String>(
+              value: selectedBloodGroup,
+              items: bloodGroups.map((group) {
+                return DropdownMenuItem(
+                  value: group,
+                  child: Text(group),
+                );
+              }).toList(),
+              onChanged: isEditing
+                  ? (value) {
+                      setState(() {
+                        selectedBloodGroup = value!;
+                      });
+                    }
+                  : null,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isEditing ? Colors.white : Colors.grey.shade300,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ),
 
-            _buildField(
-                "Date of Birth", dobController, isEditing),
+            const SizedBox(height: 20),
 
-            _buildField(
-                "Emergency Contact",
-                emergencyController,
-                isEditing),
+            /* ================= DOB ================= */
+
+            const Text("Date of Birth"),
+            const SizedBox(height: 6),
+
+            GestureDetector(
+              onTap: isEditing ? _pickDate : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: isEditing ? Colors.white : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  formattedDob.isEmpty
+                      ? "Select Date"
+                      : formattedDob,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /* ================= EMERGENCY CONTACT ================= */
+
+            const Text("Emergency Contact"),
+            const SizedBox(height: 6),
+
+            Row(
+              children: [
+
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isEditing ? Colors.white : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: DropdownButton<String>(
+                    value: selectedCountryCode,
+                    underline: const SizedBox(),
+                    items: countryCodes.map((code) {
+                      return DropdownMenuItem(
+                        value: code,
+                        child: Text(code),
+                      );
+                    }).toList(),
+                    onChanged: isEditing
+                        ? (value) {
+                            setState(() {
+                              selectedCountryCode = value!;
+                            });
+                          }
+                        : null,
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: TextField(
+                    controller: emergencyController,
+                    readOnly: !isEditing,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isEditing ? Colors.white : Colors.grey.shade300,
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(30),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
             if (isEditing)
               Padding(
@@ -371,7 +534,7 @@ class _CitizenSettingsPageState
 
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.grey.shade300,
+              fillColor: enabled ? Colors.white : Colors.grey.shade300,
 
               border: OutlineInputBorder(
                 borderRadius:
