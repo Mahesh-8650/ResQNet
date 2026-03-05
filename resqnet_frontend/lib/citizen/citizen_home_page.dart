@@ -182,6 +182,8 @@ class _CitizenHomePageState extends State<CitizenHomePage>
           MaterialPageRoute(
             builder: (_) => CitizenRequestStatusPage(
               phone: widget.phone,
+              citizenLat: latitude!,
+              citizenLng: longitude!,
             ),
           ),
         );

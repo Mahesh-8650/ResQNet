@@ -2,13 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'citizen_map_page.dart';
 
 class CitizenRequestStatusPage extends StatefulWidget {
   final String phone;
+  final double citizenLat;
+  final double citizenLng;
 
   const CitizenRequestStatusPage({
     super.key,
     required this.phone,
+    required this.citizenLat,
+    required this.citizenLng,
   });
 
   @override
@@ -30,6 +35,8 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
   String driverName = "";
   String vehicleNumber = "";
   String hospitalName = "";
+  double hospitalLat = 0;
+  double hospitalLng = 0;
 
   @override
   void initState() {
@@ -78,6 +85,16 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
           hospitalName =
               data["hospital"]?["hospitalName"] ?? "";
+              
+          print("Hospital data: ${data["hospital"]}");
+          if (data["hospital"]?["location"]?["coordinates"] != null) {
+
+  hospitalLng =
+      data["hospital"]["location"]["coordinates"][0];
+
+  hospitalLat =
+      data["hospital"]["location"]["coordinates"][1];
+}
         });
       }
 
@@ -158,47 +175,72 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
                         const SizedBox(height: 25),
 
                         Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
+  elevation: 4,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.person),
+            const SizedBox(width: 10),
+            Text("Driver: $driverName"),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            const Icon(Icons.local_shipping),
+            const SizedBox(width: 10),
+            Text("Vehicle: $vehicleNumber"),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            const Icon(Icons.local_hospital),
+            const SizedBox(width: 10),
+            Text("Hospital: $hospitalName"),
+          ],
+        ),
+      ],
+    ),
+  ),
+),
 
-                                Row(
-                                  children: [
-                                    const Icon(Icons.person),
-                                    const SizedBox(width: 10),
-                                    Text("Driver: $driverName"),
-                                  ],
-                                ),
+const SizedBox(height: 20),
 
-                                const SizedBox(height: 10),
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.red,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+    ),
+    onPressed: () {
 
-                                Row(
-                                  children: [
-                                    const Icon(Icons.local_shipping),
-                                    const SizedBox(width: 10),
-                                    Text("Vehicle: $vehicleNumber"),
-                                  ],
-                                ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CitizenMapPage(
+            citizenLat: widget.citizenLat,
+            citizenLng: widget.citizenLng,
+            hospitalLat: hospitalLat,
+            hospitalLng: hospitalLng,
+          ),
+        ),
+      );
 
-                                const SizedBox(height: 10),
-
-                                Row(
-                                  children: [
-                                    const Icon(Icons.local_hospital),
-                                    const SizedBox(width: 10),
-                                    Text("Hospital: $hospitalName"),
-                                  ],
-                                ),
-
-                              ],
-                            ),
-                          ),
-                        ),
+    },
+    child: const Text(
+      "Track Ambulance",
+      style: TextStyle(fontSize: 16),
+    ),
+  ),
+),
                       ],
 
                     ],

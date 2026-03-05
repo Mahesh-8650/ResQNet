@@ -330,7 +330,7 @@ router.get("/status/:phone", async (req, res) => {
       status: { $in: ["pending", "offered", "assigned"] }
     })
     .populate("ambulanceId", "fullName vehicleNumber")
-    .populate("hospitalId", "hospitalName")
+    .populate("hospitalId", "hospitalName location")
     .sort({ createdAt: -1 });
 
     if (!emergency) {
