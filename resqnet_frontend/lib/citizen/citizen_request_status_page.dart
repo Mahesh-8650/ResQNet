@@ -237,6 +237,7 @@ SizedBox(
         context,
         MaterialPageRoute(
           builder: (_) => CitizenMapPage(
+            phone: widget.phone,
             citizenLat: widget.citizenLat,
             citizenLng: widget.citizenLng,
             hospitalLat: hospitalLat,
