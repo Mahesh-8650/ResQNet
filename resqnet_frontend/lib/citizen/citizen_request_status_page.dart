@@ -37,6 +37,9 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
   String hospitalName = "";
   double hospitalLat = 0;
   double hospitalLng = 0;
+  
+  double ambulanceLat = 0;
+  double ambulanceLng = 0;
 
   @override
   void initState() {
@@ -94,6 +97,14 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
   hospitalLat =
       data["hospital"]["location"]["coordinates"][1];
+}
+if (data["ambulance"]?["currentLocation"]?["coordinates"] != null) {
+
+  ambulanceLng =
+      data["ambulance"]["currentLocation"]["coordinates"][0];
+
+  ambulanceLat =
+      data["ambulance"]["currentLocation"]["coordinates"][1];
 }
         });
       }
@@ -230,6 +241,8 @@ SizedBox(
             citizenLng: widget.citizenLng,
             hospitalLat: hospitalLat,
             hospitalLng: hospitalLng,
+            ambulanceLat: ambulanceLat,
+            ambulanceLng: ambulanceLng,
           ),
         ),
       );

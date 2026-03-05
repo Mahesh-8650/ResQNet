@@ -9,12 +9,17 @@ class CitizenMapPage extends StatefulWidget {
   final double hospitalLat;
   final double hospitalLng;
 
+  final double ambulanceLat;
+  final double ambulanceLng;
+
   const CitizenMapPage({
     super.key,
     required this.citizenLat,
     required this.citizenLng,
     required this.hospitalLat,
     required this.hospitalLng,
+    required this.ambulanceLat,
+    required this.ambulanceLng,
   });
 
   @override
@@ -26,12 +31,19 @@ class _CitizenMapPageState extends State<CitizenMapPage> {
   late GoogleMapController mapController;
 
   final Set<Marker> markers = {};
+  LatLng? ambulanceLocation;
 
   @override
-  void initState() {
-    super.initState();
-    _loadMarkers();
-  }
+void initState() {
+  super.initState();
+
+  ambulanceLocation = LatLng(
+    widget.ambulanceLat,
+    widget.ambulanceLng,
+  );
+
+  _loadMarkers();
+}
 
   void _loadMarkers() {
 
@@ -60,6 +72,20 @@ class _CitizenMapPageState extends State<CitizenMapPage> {
         ),
       ),
     );
+    if (ambulanceLocation != null) {
+  markers.add(
+    Marker(
+      markerId: const MarkerId("ambulance"),
+      position: ambulanceLocation!,
+      infoWindow: const InfoWindow(
+        title: "Ambulance",
+      ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+        BitmapDescriptor.hueGreen,
+      ),
+    ),
+  );
+}
   }
 
   @override

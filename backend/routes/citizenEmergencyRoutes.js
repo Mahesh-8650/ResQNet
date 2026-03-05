@@ -329,7 +329,7 @@ router.get("/status/:phone", async (req, res) => {
       patientPhone: phone,
       status: { $in: ["pending", "offered", "assigned"] }
     })
-    .populate("ambulanceId", "fullName vehicleNumber")
+    .populate("ambulanceId", "fullName vehicleNumber currentLocation")
     .populate("hospitalId", "hospitalName location")
     .sort({ createdAt: -1 });
 
