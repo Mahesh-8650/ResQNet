@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'navigation_placeholder_screen.dart';
+import 'ambulance_map_page.dart';
 
 class ActiveCaseScreen extends StatefulWidget {
   final String emergencyId;
@@ -93,6 +94,12 @@ class _ActiveCaseScreenState
               CrossAxisAlignment.start,
           children: [
 
+            Text(
+  hospital.toString(),
+  style: const TextStyle(color: Colors.blue),
+),
+const SizedBox(height: 10),
+
             /* ===== PATIENT INFO ===== */
 
             _infoCard(
@@ -111,36 +118,67 @@ class _ActiveCaseScreenState
 
             const SizedBox(height: 15),
 
-            _infoCard(
-              "Patient Location",
-              "${location["latitude"] ?? "-"}, "
-              "${location["longitude"] ?? "-"}",
-              Icons.location_on,
-            ),
+_infoCard(
+  "Patient Location",
+  location["coordinates"] != null
+      ? "${location["coordinates"][1]}, ${location["coordinates"][0]}"
+      : "- , -",
+  Icons.location_on,
+),
 
-            const SizedBox(height: 15),
+const SizedBox(height: 15),
 
-            if (hospital != null)
-              _infoCard(
-                "Assigned Hospital",
-                hospital.toString(),
-                Icons.local_hospital,
-              ),
+if (hospital != null)
+  _infoCard(
+    "Assigned Hospital",
+    hospital["hospitalName"] ?? "Unknown",
+    Icons.local_hospital,
+  ),
 
-            const SizedBox(height: 30),
+const SizedBox(height: 30),
+
+            
+
 
             /* ===== BUTTON FLOW ===== */
 
             if (!navigatedToPatient)
-              _primaryButton(
-                "Navigate to Patient",
-                () {
-                  setState(() {
-                    navigatedToPatient = true;
-                  });
-                  _openNavigation("Navigate to Patient");
-                },
-              ),
+             _primaryButton(
+  "Navigate to Patient",
+  () {
+
+    final patientCoords =
+    data["patientLocation"]["coordinates"];
+
+final hospital = data["hospitalId"];
+final hospitalCoords =
+    hospital["location"]["coordinates"];
+
+double patientLng = patientCoords[0];
+double patientLat = patientCoords[1];
+
+double hospitalLng = hospitalCoords[0];
+double hospitalLat = hospitalCoords[1];
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AmbulanceMapPage(
+          patientLat: patientLat,
+          patientLng: patientLng,
+          hospitalLat: hospitalLat,
+          hospitalLng: hospitalLng,
+          ambulanceId: widget.ambulanceId,
+        ),
+      ),
+    );
+
+    setState(() {
+      navigatedToPatient = true;
+    });
+
+  },
+),
 
             if (navigatedToPatient && !navigatedToHospital)
               Padding(
