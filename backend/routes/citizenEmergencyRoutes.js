@@ -351,4 +351,49 @@ router.get("/status/:phone", async (req, res) => {
   }
 });
 
+/* ===================================================== */
+/* 🚑 ADMIN DASHBOARD EMERGENCY STATS */
+/* ===================================================== */
+
+router.get("/admin/stats", async (req, res) => {
+  try {
+
+    const totalRequests = await CitizenEmergency.countDocuments();
+
+    const offered = await CitizenEmergency.countDocuments({
+      status: "offered"
+    });
+
+    const assigned = await CitizenEmergency.countDocuments({
+      status: "assigned"
+    });
+
+    const completed = await CitizenEmergency.countDocuments({
+      status: "completed"
+    });
+
+    const avgResponse = await CitizenEmergency.aggregate([
+      { $match: { responseTimeInSeconds: { $exists: true } } },
+      {
+        $group: {
+          _id: null,
+          avg: { $avg: "$responseTimeInSeconds" }
+        }
+      }
+    ]);
+
+    res.json({
+      totalRequests,
+      emergencyAlerts: offered,
+      activeEmergencies: assigned,
+      completedEmergencies: completed,
+      avgResponseTime: avgResponse[0]?.avg || 0
+    });
+
+  } catch (error) {
+    console.error("Admin stats error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ResQNet Admin Portal</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI, Arial;
+}
+
+body{
+display:flex;
+background:#f5f7fb;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:white;
+border-right:1px solid #e5e7eb;
+height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+padding:20px;
+font-weight:600;
+}
+
+.logo i{
+background:#2563eb;
+color:white;
+padding:10px;
+border-radius:8px;
+}
+
+.menu a{
+display:flex;
+gap:12px;
+padding:14px 20px;
+text-decoration:none;
+color:#555;
+border-radius:8px;
+}
+
+.menu a.active{
+background:#eef2ff;
+color:#2563eb;
+}
+
+.profile{
+margin-top:auto;
+padding:20px;
+display:flex;
+gap:10px;
+border-top:1px solid #eee;
+}
+
+.avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#2563eb;
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+}
+
+/* TOPBAR */
+
+.topbar{
+background:white;
+height:70px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 30px;
+border-bottom:1px solid #eee;
+}
+
+.search{
+width:360px;
+padding:10px;
+border-radius:8px;
+border:1px solid #d1d5db;
+}
+
+.icons{
+display:flex;
+gap:15px;
+align-items:center;
+}
+
+.logout{
+background:#2563eb;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:8px;
+}
+
+/* CONTENT */
+
+.container{
+padding:30px;
+}
+
+/* STAT CARDS */
+
+.cards{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin-bottom:25px;
+}
+
+.card{
+background:white;
+padding:22px;
+border-radius:14px;
+box-shadow:0 4px 12px rgba(0,0,0,0.04);
+}
+
+.icon{
+width:42px;
+height:42px;
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:18px;
+}
+
+.blue{background:#e0e7ff;color:#2563eb}
+.green{background:#dcfce7;color:#16a34a}
+.red{background:#fee2e2;color:#dc2626}
+
+.stat{
+font-size:28px;
+margin-top:10px;
+font-weight:600;
+}
+
+/* STATUS GRID */
+
+.status-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:22px;
+}
+
+.status-card{
+background:white;
+padding:25px;
+border-radius:14px;
+box-shadow:0 4px 12px rgba(0,0,0,0.04);
+}
+
+.status-content{
+display:flex;
+align-items:center;
+gap:35px;
+margin-top:10px;
+}
+
+.oval{
+width:220px;
+height:140px;
+border-radius:80px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.green-bg{
+background:rgba(34,197,94,0.08);
+border:2px solid rgba(34,197,94,0.35);
+}
+
+.blue-bg{
+background:rgba(37,99,235,0.08);
+border:2px solid rgba(37,99,235,0.35);
+}
+
+.oval h1{
+font-size:48px;
+}
+
+.oval span{
+font-size:12px;
+letter-spacing:3px;
+color:#6b7280;
+}
+
+.status-bars{
+flex:1;
+}
+
+.progress-row{
+margin-bottom:14px;
+font-size:14px;
+}
+
+.progress{
+height:6px;
+background:#e5e7eb;
+border-radius:20px;
+margin-top:5px;
+}
+
+.bar{
+height:100%;
+border-radius:20px;
+}
+
+/* TABLE */
+
+.table{
+margin-top:25px;
+background:white;
+padding:22px;
+border-radius:14px;
+box-shadow:0 4px 12px rgba(0,0,0,0.04);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+text-align:left;
+font-size:13px;
+color:#6b7280;
+padding-bottom:10px;
+border-bottom:1px solid #eee;
+}
+
+td{
+padding:14px 0;
+border-bottom:1px solid #f1f1f1;
+}
+
+.badge{
+padding:4px 10px;
+border-radius:6px;
+font-size:12px;
+}
+
+.approved{background:#dcfce7;color:#166534}
+.pending{background:#fef3c7;color:#92400e}
+.rejected{background:#fee2e2;color:#991b1b}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<div class="logo">
+<i class="fa-solid fa-star"></i>
+ResQNet
+</div>
+
+<div class="menu">
+<a class="active"><i class="fa fa-chart-line"></i> Dashboard</a>
+<a href="pending.html"><i class="fa fa-clock"></i> Pending</a>
+<a href="approved.html"><i class="fa fa-check-circle"></i> Approved</a>
+<a href="rejected.html"><i class="fa fa-times-circle"></i> Rejected</a>
+</div>
+
+<div class="profile">
+<div class="avatar"></div>
+<div>
+<div>ResQNet Control</div>
+<small>Emergency Admin</small>
+</div>
+</div>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+<h3>System Overview</h3>
+<input class="search" placeholder="Search resources, requests or alerts...">
+<div class="icons">
+<i class="fa fa-bell"></i>
+<i class="fa fa-comment"></i>
+<button class="logout">Logout</button>
+</div>
+</div>
+
+<div class="container">
+
+<!-- CARDS -->
+
+<div class="cards">
+
+<div class="card">
+<div class="icon blue"><i class="fa fa-chart-bar"></i></div>
+<p>Total Registrations</p>
+<div class="stat" id="totalRegistrations">0</div>
+</div>
+
+<div class="card">
+<div class="icon green"><i class="fa fa-wifi"></i></div>
+<p>Active Ambulances</p>
+<div class="stat" id="activeAmbulances">0</div>
+</div>
+
+<div class="card">
+<div class="icon green"><i class="fa fa-check-circle"></i></div>
+<p>Approved Hospitals</p>
+<div class="stat" id="approvedHospitals">0</div>
+</div>
+
+<div class="card">
+<div class="icon red"><i class="fa fa-triangle-exclamation"></i></div>
+<p>Emergency Alerts</p>
+<div class="stat">0</div>
+</div>
+
+</div>
+
+<!-- STATUS GRID -->
+
+<div class="status-grid">
+
+<div class="status-card">
+
+<h3>Hospitals Operational Status</h3>
+
+<div class="status-content">
+
+<div class="oval green-bg">
+<div>
+<h1 id="activePercent">0%</h1>
+<span>ACTIVE</span>
+</div>
+</div>
+
+<div class="status-bars">
+
+<div class="progress-row" id="approvedText">
+Approved
+<div class="progress"><div class="bar" id="approvedBar" style="background:#16a34a"></div></div>
+</div>
+
+<div class="progress-row" id="pendingText">
+Pending
+<div class="progress"><div class="bar" id="pendingBar" style="background:#f59e0b"></div></div>
+</div>
+
+<div class="progress-row" id="rejectedText">
+Rejected
+<div class="progress"><div class="bar" id="rejectedBar" style="background:#ef4444"></div></div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="status-card">
+
+<h3>Ambulance Fleet Status</h3>
+
+<div class="status-content">
+
+<div class="oval blue-bg">
+<div>
+<h1 id="ambulancePercent">0%</h1>
+<span>READY</span>
+</div>
+</div>
+
+<div class="status-bars">
+
+<div class="progress-row" id="availableText">
+Available
+<div class="progress"><div class="bar" id="availableBar" style="background:#16a34a"></div></div>
+</div>
+
+<div class="progress-row" id="missionText">
+On Mission
+<div class="progress"><div class="bar" id="missionBar" style="background:#f59e0b"></div></div>
+</div>
+
+<div class="progress-row" id="maintenanceText">
+Maintenance
+<div class="progress"><div class="bar" id="maintenanceBar" style="background:#ef4444"></div></div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- RECENT APPLICATIONS -->
+
+<div class="table">
+
+<h3>Recent Applications</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Applicant</th>
+<th>Type</th>
+<th>Location</th>
+<th>Status</th>
+<th>Date</th>
+</tr>
+</thead>
+
+<tbody id="recentTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+const BASE_URL="https://resqnet-backend-1xe3.onrender.com";
+
+function getDateFromId(id){
+return new Date(parseInt(id.substring(0,8),16)*1000)
+.toLocaleDateString();
+}
+
+async function loadDashboard(){
+
+const pendingHosp=await fetch(`${BASE_URL}/api/admin/hospitals/pending`).then(r=>r.json());
+const approvedHosp=await fetch(`${BASE_URL}/api/admin/hospitals/approved`).then(r=>r.json());
+const rejectedHosp=await fetch(`${BASE_URL}/api/admin/hospitals/rejected`).then(r=>r.json());
+
+const pendingAmb=await fetch(`${BASE_URL}/api/admin/ambulances/pending`).then(r=>r.json());
+const approvedAmb=await fetch(`${BASE_URL}/api/admin/ambulances/approved`).then(r=>r.json());
+const rejectedAmb=await fetch(`${BASE_URL}/api/admin/ambulances/rejected`).then(r=>r.json());
+
+const hospPending=pendingHosp.count||0;
+const hospApproved=approvedHosp.count||0;
+const hospRejected=rejectedHosp.count||0;
+
+const ambPending=pendingAmb.count||0;
+const ambApproved=approvedAmb.count||0;
+const ambRejected=rejectedAmb.count||0;
+
+/* TOTAL REGISTRATIONS */
+
+document.getElementById("totalRegistrations").innerText=
+hospPending+hospApproved+hospRejected+
+ambPending+ambApproved+ambRejected;
+
+/* APPROVED HOSPITALS */
+
+document.getElementById("approvedHospitals").innerText=hospApproved;
+
+/* ACTIVE AMBULANCES */
+
+const ambulances=approvedAmb.ambulances||[];
+
+const available=
+ambulances.filter(a=>a.isAvailable===true).length;
+
+document.getElementById("activeAmbulances").innerText=available;
+
+/* HOSPITAL STATUS */
+
+const totalHosp=hospPending+hospApproved+hospRejected;
+
+const approvedPercent=Math.round((hospApproved/totalHosp)*100)||0;
+const pendingPercent=Math.round((hospPending/totalHosp)*100)||0;
+const rejectedPercent=Math.round((hospRejected/totalHosp)*100)||0;
+
+document.getElementById("activePercent").innerText=approvedPercent+"%";
+
+document.getElementById("approvedBar").style.width=approvedPercent+"%";
+document.getElementById("pendingBar").style.width=pendingPercent+"%";
+document.getElementById("rejectedBar").style.width=rejectedPercent+"%";
+
+document.getElementById("approvedText").childNodes[0].nodeValue=`Approved ${hospApproved} (${approvedPercent}%) `;
+document.getElementById("pendingText").childNodes[0].nodeValue=`Pending ${hospPending} (${pendingPercent}%) `;
+document.getElementById("rejectedText").childNodes[0].nodeValue=`Rejected ${hospRejected} (${rejectedPercent}%) `;
+
+/* AMBULANCE STATUS */
+
+const onMission=
+ambulances.filter(a=>a.isBusy===true).length;
+
+const maintenance=
+ambulances.filter(a=>!a.isAvailable && !a.isBusy).length;
+
+const totalAmb=available+onMission+maintenance;
+
+const availablePercent=Math.round((available/totalAmb)*100)||0;
+const missionPercent=Math.round((onMission/totalAmb)*100)||0;
+const maintenancePercent=Math.round((maintenance/totalAmb)*100)||0;
+
+document.getElementById("ambulancePercent").innerText=availablePercent+"%";
+
+document.getElementById("availableBar").style.width=availablePercent+"%";
+document.getElementById("missionBar").style.width=missionPercent+"%";
+document.getElementById("maintenanceBar").style.width=maintenancePercent+"%";
+
+document.getElementById("availableText").childNodes[0].nodeValue=`Available ${available} (${availablePercent}%) `;
+document.getElementById("missionText").childNodes[0].nodeValue=`On Mission ${onMission} (${missionPercent}%) `;
+document.getElementById("maintenanceText").childNodes[0].nodeValue=`Maintenance ${maintenance} (${maintenancePercent}%) `;
+
+}
+
+/* RECENT APPLICATIONS */
+
+async function loadRecentApplications(){
+
+const hosp=await fetch(`${BASE_URL}/api/admin/hospitals/pending`).then(r=>r.json());
+const amb=await fetch(`${BASE_URL}/api/admin/ambulances/pending`).then(r=>r.json());
+
+let rows="";
+
+(hosp.hospitals||[]).forEach(h=>{
+rows+=`
+<tr>
+<td>${h.hospitalName}</td>
+<td>Hospital</td>
+<td>${h.address}</td>
+<td><span class="badge pending">PENDING</span></td>
+<td>${getDateFromId(h._id)}</td>
+</tr>`;
+});
+
+(amb.ambulances||[]).forEach(a=>{
+rows+=`
+<tr>
+<td>${a.fullName}</td>
+<td>Ambulance</td>
+<td>${a.vehicleNumber}</td>
+<td><span class="badge pending">PENDING</span></td>
+<td>${getDateFromId(a._id)}</td>
+</tr>`;
+});
+
+document.getElementById("recentTable").innerHTML=rows;
+
+}
+
+loadDashboard();
+loadRecentApplications();
+
+</script>
+
+</body>
+</html>
