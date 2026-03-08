@@ -1,181 +1,368 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Approved Registrations</title>
+<meta charset="UTF-8">
+<title>ResQNet Admin - Approved Registrations</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body { font-family: Arial; background:#f4f6f9; margin:0; }
 
-header {
-    background:#007bff;
-    color:white;
-    padding:20px;
-    position:relative;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI, Arial;
 }
 
-.back {
-    position:absolute;
-    left:20px;
-    top:22px;
-    cursor:pointer;
-    font-weight:bold;
+body{
+display:flex;
+background:#f5f7fb;
 }
 
-.container {
-    width:85%;
-    margin:30px auto;
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:white;
+border-right:1px solid #e5e7eb;
+height:100vh;
+display:flex;
+flex-direction:column;
+
+position:fixed;
+left:0;
+top:0;
 }
 
-.tabs-row {
-    display:flex;
-    align-items:center;
-    gap:30px;
-    margin-bottom:25px;
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+padding:20px;
+font-weight:600;
 }
 
-.tabs { display:flex; gap:15px; }
-
-.tab {
-    padding:10px 25px;
-    border-radius:25px;
-    cursor:pointer;
-    font-weight:600;
-    background:#e9ecef;
-    color:#555;
-    transition:0.3s;
+.logo i{
+background:#2563eb;
+color:white;
+padding:10px;
+border-radius:8px;
 }
 
-.tab:hover { background:#d6d8db; }
-
-.tab.active {
-    background:#28a745;
-    color:white;
+.menu a{
+display:flex;
+gap:12px;
+padding:14px 20px;
+text-decoration:none;
+color:#555;
+border-radius:8px;
 }
 
-.search-box { position:relative; }
-
-.search-box input {
-    padding:8px 15px 8px 38px;
-    border-radius:20px;
-    border:1px solid #ccc;
-    width:260px;
-    outline:none;
-    font-size:14px;
+.menu a.active{
+background:#eef2ff;
+color:#2563eb;
 }
 
-.search-box input:focus { border-color:#28a745; }
-
-.search-icon {
-    position:absolute;
-    left:12px;
-    top:50%;
-    transform:translateY(-50%);
-    width:16px;
-    height:16px;
+.profile{
+margin-top:auto;
+padding:20px;
+display:flex;
+gap:10px;
+border-top:1px solid #eee;
 }
 
-.card {
-    background:white;
-    padding:20px;
-    margin-bottom:20px;
-    border-radius:10px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+.avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#2563eb;
 }
 
-.doc-btn {
-    padding:6px 12px;
-    border:none;
-    cursor:pointer;
-    margin:6px 6px 6px 0;
-    border-radius:5px;
-    background:#6c757d;
-    color:white;
-    font-size:13px;
+/* MAIN */
+
+.main{
+flex:1;
+margin-left:240px;
 }
 
-.no-results {
-    text-align:center;
-    margin-top:40px;
-    font-size:16px;
-    color:#777;
+/* TOPBAR */
+
+.topbar{
+background:white;
+height:80px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 30px;
+border-bottom:1px solid #eee;
 }
 
-.modal {
-    display:none;
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.6);
+.page-title h2{
+font-size:20px;
+font-weight:600;
 }
 
-.modal-content {
-    background:white;
-    margin:5% auto;
-    padding:20px;
-    width:70%;
-    border-radius:8px;
-    text-align:center;
-    position:relative;
+.page-title p{
+font-size:13px;
+color:#6b7280;
+margin-top:3px;
 }
 
-.modal img {
-    max-width:100%;
-    max-height:500px;
-    object-fit:contain;
+.topbar-right{
+display:flex;
+align-items:center;
+gap:20px;
 }
 
-.close {
-    position:absolute;
-    right:15px;
-    top:10px;
-    cursor:pointer;
+/* SEARCH */
+
+.search-box{
+position:relative;
 }
+
+.search-box input{
+padding:8px 15px 8px 38px;
+border-radius:20px;
+border:1px solid #d1d5db;
+width:260px;
+font-size:14px;
+transition:0.2s;
+outline:none;
+}
+
+/* GREEN FOCUS */
+
+.search-box input:focus{
+outline:none;
+border-color:#22c55e;
+box-shadow:0 0 0 3px rgba(34,197,94,0.25);
+}
+
+.search-icon{
+position:absolute;
+left:12px;
+top:50%;
+transform:translateY(-50%);
+width:16px;
+height:16px;
+}
+
+.icons{
+display:flex;
+gap:15px;
+align-items:center;
+}
+
+.logout{
+background:#2563eb;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* CONTAINER */
+
+.container{
+padding:30px;
+}
+
+/* TABS */
+
+.tabs{
+display:flex;
+gap:15px;
+margin-bottom:25px;
+}
+
+.tab{
+padding:10px 25px;
+border-radius:25px;
+cursor:pointer;
+font-weight:600;
+background:#e9ecef;
+color:#555;
+}
+
+.tab.active{
+background:#22c55e;
+color:white;
+}
+
+/* CARD */
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* DOCUMENT BUTTON */
+
+.doc-btn{
+padding:6px 12px;
+border:none;
+cursor:pointer;
+margin:6px 6px 6px 0;
+border-radius:5px;
+background:#6c757d;
+color:white;
+font-size:13px;
+}
+
+/* NO RESULTS */
+
+.no-results{
+text-align:center;
+margin-top:40px;
+font-size:16px;
+color:#777;
+}
+
+/* MODAL */
+
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+}
+
+.modal-content{
+background:white;
+margin:5% auto;
+padding:20px;
+width:70%;
+border-radius:8px;
+text-align:center;
+position:relative;
+}
+
+.modal img{
+max-width:100%;
+max-height:500px;
+object-fit:contain;
+}
+
+.close{
+position:absolute;
+right:15px;
+top:10px;
+cursor:pointer;
+font-size:20px;
+}
+
 </style>
 </head>
 
 <body>
 
-<header>
-<div class="back" onclick="goBack()">← Back</div>
-<h2 style="text-align:center;">Approved Registrations</h2>
-</header>
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<div class="logo">
+<i class="fa-solid fa-star"></i>
+ResQNet
+</div>
+
+<div class="menu">
+<a href="index.html"><i class="fa fa-chart-line"></i> Dashboard</a>
+<a href="pending.html"><i class="fa fa-clock"></i> Pending</a>
+<a class="active"><i class="fa fa-check-circle"></i> Approved</a>
+<a href="rejected.html"><i class="fa fa-times-circle"></i> Rejected</a>
+</div>
+
+<div class="profile">
+<div class="avatar"></div>
+<div>
+<div>ResQNet Control</div>
+<small>Emergency Admin</small>
+</div>
+</div>
+
+</div>
+
+<!-- MAIN -->
+
+<div class="main">
+
+<div class="topbar">
+
+<div class="page-title">
+<h2>Approved Registrations</h2>
+<p>Verified hospitals and ambulances</p>
+</div>
+
+<div class="topbar-right">
+
+<div class="search-box">
+
+<svg class="search-icon" viewBox="0 0 24 24">
+<circle cx="11" cy="11" r="7"
+stroke="#999"
+stroke-width="2"
+fill="none"></circle>
+
+<line x1="16" y1="16"
+x2="21" y2="21"
+stroke="#999"
+stroke-width="2"
+stroke-linecap="round"></line>
+</svg>
+
+<input
+type="text"
+id="searchInput"
+placeholder="Search..."
+onkeyup="filterData()">
+
+</div>
+
+<div class="icons">
+<i class="fa fa-bell"></i>
+<i class="fa fa-comment"></i>
+<button class="logout">Logout</button>
+</div>
+
+</div>
+
+</div>
 
 <div class="container">
 
-<div class="tabs-row">
-    <div class="tabs">
-        <div class="tab active" onclick="showHospitals()" id="hospitalTab">
-            🏥 Hospitals
-        </div>
-        <div class="tab" onclick="showAmbulances()" id="ambulanceTab">
-            🚑 Ambulances
-        </div>
-    </div>
+<div class="tabs">
 
-    <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="7"
-                stroke="#999" stroke-width="2"
-                fill="none"></circle>
-            <line x1="16" y1="16"
-                  x2="21" y2="21"
-                  stroke="#999"
-                  stroke-width="2"
-                  stroke-linecap="round"></line>
-        </svg>
+<div class="tab active"
+onclick="showHospitals()"
+id="hospitalTab">
+🏥 Hospitals
+</div>
 
-        <input type="text" id="searchInput"
-               placeholder="Search..."
-               onkeyup="filterData()">
-    </div>
+<div class="tab"
+onclick="showAmbulances()"
+id="ambulanceTab">
+🚑 Ambulances
+</div>
+
 </div>
 
 <div id="hospitalSection"></div>
 <div id="ambulanceSection" style="display:none;"></div>
 
 </div>
+
+</div>
+
+<!-- MODAL -->
 
 <div id="modal" class="modal">
 <div class="modal-content">
@@ -187,9 +374,9 @@ header {
 <script>
 
 const BASE_URL="https://resqnet-backend-1xe3.onrender.com";
-let hospitalData=[], ambulanceData=[];
 
-function goBack(){ window.location.href="dashboard.html"; }
+let hospitalData=[];
+let ambulanceData=[];
 
 function showHospitals(){
 hospitalSection.style.display="block";
@@ -214,79 +401,135 @@ previewImage.src=BASE_URL+"/uploads/"+file;
 modal.style.display="block";
 }
 
-function closeModal(){ modal.style.display="none"; }
+function closeModal(){
+modal.style.display="none";
+}
 
 function renderHospitals(data){
+
 hospitalSection.innerHTML="";
+
 if(data.length===0){
 hospitalSection.innerHTML=`<div class="no-results">No results found</div>`;
 return;
 }
+
 data.forEach(x=>{
+
 hospitalSection.innerHTML+=`
+
 <div class="card">
+
 <h3>${x.hospitalName}</h3>
+
 <p><strong>Email:</strong> ${x.email}</p>
 <p><strong>Phone:</strong> ${x.phone}</p>
 <p><strong>Registration Number:</strong> ${x.registrationNumber}</p>
 <p><strong>Address:</strong> ${x.address}</p>
-<button class="doc-btn" onclick="openFile('${x.certificateFilePath}')">
+
+<button class="doc-btn"
+onclick="openFile('${x.certificateFilePath}')">
 Registration Certificate
 </button>
-</div>`;
+
+</div>
+
+`;
+
 });
+
 }
 
 function renderAmbulances(data){
+
 ambulanceSection.innerHTML="";
+
 if(data.length===0){
 ambulanceSection.innerHTML=`<div class="no-results">No results found</div>`;
 return;
 }
+
 data.forEach(x=>{
+
 ambulanceSection.innerHTML+=`
+
 <div class="card">
+
 <h3>${x.fullName}</h3>
+
 <p><strong>Email:</strong> ${x.email}</p>
 <p><strong>Phone:</strong> ${x.phone}</p>
 <p><strong>Vehicle Number:</strong> ${x.vehicleNumber}</p>
 <p><strong>License Number:</strong> ${x.licenseNumber}</p>
-<button class="doc-btn" onclick="openFile('${x.rcFilePath}')">RC Document</button>
-<button class="doc-btn" onclick="openFile('${x.licenseFilePath}')">Driving License</button>
-<button class="doc-btn" onclick="openFile('${x.permitFilePath}')">Vehicle Permit</button>
-</div>`;
+
+<button class="doc-btn"
+onclick="openFile('${x.rcFilePath}')">
+RC Document
+</button>
+
+<button class="doc-btn"
+onclick="openFile('${x.licenseFilePath}')">
+Driving License
+</button>
+
+<button class="doc-btn"
+onclick="openFile('${x.permitFilePath}')">
+Vehicle Permit
+</button>
+
+</div>
+
+`;
+
 });
+
 }
 
 function filterData(){
+
 const keyword=searchInput.value.toLowerCase();
+
 if(hospitalSection.style.display!=="none"){
-renderHospitals(hospitalData.filter(x=>
+
+renderHospitals(
+hospitalData.filter(x=>
 x.hospitalName.toLowerCase().includes(keyword)||
 x.email.toLowerCase().includes(keyword)||
 x.phone.includes(keyword)||
 x.registrationNumber.toLowerCase().includes(keyword)
-));
+)
+);
+
 }else{
-renderAmbulances(ambulanceData.filter(x=>
+
+renderAmbulances(
+ambulanceData.filter(x=>
 x.fullName.toLowerCase().includes(keyword)||
 x.email.toLowerCase().includes(keyword)||
 x.phone.includes(keyword)||
 x.vehicleNumber.toLowerCase().includes(keyword)
-));
+)
+);
+
 }
+
 }
 
 async function load(){
+
 const h=await fetch(`${BASE_URL}/api/admin/hospitals/approved`);
 const a=await fetch(`${BASE_URL}/api/admin/ambulances/approved`);
-hospitalData=(await h.json()).hospitals;
-ambulanceData=(await a.json()).ambulances;
+
+hospitalData=(await h.json()).hospitals||[];
+ambulanceData=(await a.json()).ambulances||[];
+
 renderHospitals(hospitalData);
 renderAmbulances(ambulanceData);
+
 }
 
 load();
+
 </script>
 
 </body>

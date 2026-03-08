@@ -29,6 +29,10 @@ border-right:1px solid #e5e7eb;
 height:100vh;
 display:flex;
 flex-direction:column;
+
+position:fixed;
+left:0;
+top:0;
 }
 
 .logo{
@@ -53,6 +57,11 @@ padding:14px 20px;
 text-decoration:none;
 color:#555;
 border-radius:8px;
+}
+.menu a:hover{
+background:#f1f5ff;
+color:#2563eb;
+transform:translateX(3px);
 }
 
 .menu a.active{
@@ -79,6 +88,8 @@ background:#2563eb;
 
 .main{
 flex:1;
+margin-left:240px;
+
 }
 
 /* TOPBAR */
@@ -131,9 +142,16 @@ margin-bottom:25px;
 
 .card{
 background:white;
-padding:22px;
-border-radius:14px;
-box-shadow:0 4px 12px rgba(0,0,0,0.04);
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+transition:0.3s;
+cursor:pointer;
+}
+
+.card:hover{
+transform:translateY(-5px);
+box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
 
 .icon{
@@ -166,9 +184,16 @@ gap:22px;
 
 .status-card{
 background:white;
-padding:25px;
-border-radius:14px;
-box-shadow:0 4px 12px rgba(0,0,0,0.04);
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+transition:0.3s;
+cursor:pointer;
+}
+
+.status-card:hover{
+transform:translateY(-6px);
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
 
 .status-content{
@@ -299,11 +324,11 @@ ResQNet
 
 <div class="topbar">
 <h3>System Overview</h3>
-<input class="search" placeholder="Search resources, requests or alerts...">
+<input class="search" id="searchInput" placeholder="Search resources, requests or alerts..." onkeyup="searchTable()">
 <div class="icons">
 <i class="fa fa-bell"></i>
 <i class="fa fa-comment"></i>
-<button class="logout">Logout</button>
+<button class="logout" id="logoutBtn">Logout</button>
 </div>
 </div>
 
@@ -315,7 +340,7 @@ ResQNet
 
 <div class="card">
 <div class="icon blue"><i class="fa fa-chart-bar"></i></div>
-<p>Total Registrations</p>
+<p>Total System Registrations</p>
 <div class="stat" id="totalRegistrations">0</div>
 </div>
 
@@ -334,7 +359,7 @@ ResQNet
 <div class="card">
 <div class="icon red"><i class="fa fa-triangle-exclamation"></i></div>
 <p>Emergency Alerts</p>
-<div class="stat">0</div>
+<div class="stat" id="emergencyAlerts">0</div>
 </div>
 
 </div>
@@ -425,8 +450,8 @@ Maintenance
 <tr>
 <th>Applicant</th>
 <th>Type</th>
-<th>Location</th>
-<th>Status</th>
+<th> Details</th>
+<th> Status</th>
 <th>Date</th>
 </tr>
 </thead>
@@ -458,6 +483,11 @@ const rejectedHosp=await fetch(`${BASE_URL}/api/admin/hospitals/rejected`).then(
 const pendingAmb=await fetch(`${BASE_URL}/api/admin/ambulances/pending`).then(r=>r.json());
 const approvedAmb=await fetch(`${BASE_URL}/api/admin/ambulances/approved`).then(r=>r.json());
 const rejectedAmb=await fetch(`${BASE_URL}/api/admin/ambulances/rejected`).then(r=>r.json());
+const stats = await fetch(`${BASE_URL}/api/citizen-emergency/admin/stats`)
+.then(r=>r.json());
+
+document.getElementById("emergencyAlerts").innerText =
+stats.emergencyAlerts || 0;
 
 const hospPending=pendingHosp.count||0;
 const hospApproved=approvedHosp.count||0;
@@ -530,43 +560,133 @@ document.getElementById("maintenanceText").childNodes[0].nodeValue=`Maintenance 
 
 }
 
+function getDateFromObjectId(objectId){
+
+const timestamp = objectId.substring(0,8);
+const date = new Date(parseInt(timestamp,16)*1000);
+
+return date.toLocaleDateString();
+
+}
+
 /* RECENT APPLICATIONS */
 
 async function loadRecentApplications(){
 
-const hosp=await fetch(`${BASE_URL}/api/admin/hospitals/pending`).then(r=>r.json());
-const amb=await fetch(`${BASE_URL}/api/admin/ambulances/pending`).then(r=>r.json());
+const pendingHosp = await fetch(`${BASE_URL}/api/admin/hospitals/pending`).then(r=>r.json());
+const approvedHosp = await fetch(`${BASE_URL}/api/admin/hospitals/approved`).then(r=>r.json());
 
-let rows="";
+const pendingAmb = await fetch(`${BASE_URL}/api/admin/ambulances/pending`).then(r=>r.json());
+const approvedAmb = await fetch(`${BASE_URL}/api/admin/ambulances/approved`).then(r=>r.json());
 
-(hosp.hospitals||[]).forEach(h=>{
-rows+=`
+let recent = [];
+
+/* ADD PENDING FIRST */
+
+recent = [
+
+...(pendingHosp.hospitals || []).map(h => ({
+name: h.hospitalName,
+type: "Hospital",
+location: h.address,
+status: "pending",
+date: getDateFromObjectId(h._id)
+})),
+
+...(pendingAmb.ambulances || []).map(a => ({
+name: a.fullName,
+type: "Ambulance",
+location: a.vehicleNumber,
+status: "pending",
+date: getDateFromObjectId(a._id)
+}))
+
+];
+
+/* IF LESS THAN 5 ADD APPROVED */
+
+if(recent.length < 5){
+
+const approved = [
+
+...(approvedHosp.hospitals || []).map(h => ({
+name: h.hospitalName,
+type: "Hospital",
+location: h.address,
+status: "approved",
+date: getDateFromObjectId(h._id)
+})),
+
+...(approvedAmb.ambulances || []).map(a => ({
+name: a.fullName,
+type: "Ambulance",
+location: a.vehicleNumber,
+status: "approved",
+date: getDateFromObjectId(a._id)
+}))
+
+];
+
+recent = [...recent, ...approved];
+
+}
+
+/* LIMIT TO 5 */
+
+recent = recent.slice(0,5);
+
+/* BUILD TABLE */
+
+let rows = "";
+
+recent.forEach(x=>{
+
+let badge = x.status === "pending"
+? `<span class="badge pending">PENDING</span>`
+: `<span class="badge approved">APPROVED</span>`;
+
+rows += `
 <tr>
-<td>${h.hospitalName}</td>
-<td>Hospital</td>
-<td>${h.address}</td>
-<td><span class="badge pending">PENDING</span></td>
-<td>${getDateFromId(h._id)}</td>
-</tr>`;
+<td>${x.name}</td>
+<td>${x.type}</td>
+<td>${x.location}</td>
+<td>${badge}</td>
+<td>${x.date}</td>
+</tr>
+`;
+
 });
 
-(amb.ambulances||[]).forEach(a=>{
-rows+=`
-<tr>
-<td>${a.fullName}</td>
-<td>Ambulance</td>
-<td>${a.vehicleNumber}</td>
-<td><span class="badge pending">PENDING</span></td>
-<td>${getDateFromId(a._id)}</td>
-</tr>`;
-});
-
-document.getElementById("recentTable").innerHTML=rows;
+document.getElementById("recentTable").innerHTML = rows;
 
 }
 
 loadDashboard();
 loadRecentApplications();
+
+function searchTable(){
+
+let keyword = document.getElementById("searchInput").value.toLowerCase();
+
+let rows = document.querySelectorAll("#recentTable tr");
+
+rows.forEach(row => {
+
+let text = row.innerText.toLowerCase();
+
+if(text.includes(keyword)){
+row.style.display="";
+}else{
+row.style.display="none";
+}
+
+});
+
+}
+
+document.getElementById("logoutBtn").onclick = function(){
+    window.location.href = "login.html";
+};
 
 </script>
 
