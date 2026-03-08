@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class AmbulanceMapPage extends StatefulWidget {
   final double patientLat;
@@ -35,14 +36,26 @@ class _AmbulanceMapPageState extends State<AmbulanceMapPage> {
 
   LatLng? ambulanceLocation;
   LatLng? previousLocation;
+  BitmapDescriptor? ambulanceIcon;
+  double ambulanceBearing = 0;
+  double lastCameraBearing = 0;
 
   Timer? locationTimer;
 
   bool reachedPatient = false;
   bool mapReady = false;
+  bool userMovedMap = false;
+  bool tripCompleted = false;
+
+  String emergencyId = "";
+
   String etaText = "";
   String distanceText = "";
   String nextInstruction = "";
+  IconData navigationIcon = Icons.arrow_upward;
+
+  final FlutterTts flutterTts = FlutterTts();
+  String lastSpokenInstruction = "";
 
   final String apiKey = "AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
 
@@ -65,6 +78,7 @@ class _AmbulanceMapPageState extends State<AmbulanceMapPage> {
     position.longitude,
   );
 }
+ 
 
   @override
   void initState() {
@@ -101,6 +115,7 @@ Future<void> _fetchDriverLocation() async {
       if (data["hasEmergency"] == true) {
 
         final emergency = data["emergency"];
+        emergencyId = emergency["_id"];
 
         double patientLng =
             emergency["patientLocation"]["coordinates"][0];
@@ -110,17 +125,39 @@ Future<void> _fetchDriverLocation() async {
 
         // simulate ambulance 5km away
         await _getDriverLocation();
+
+        if (previousLocation != null && ambulanceLocation != null) {
+
+ double movementDistance = _calculateDistance(
+  previousLocation!.latitude,
+  previousLocation!.longitude,
+  ambulanceLocation!.latitude,
+  ambulanceLocation!.longitude,
+);
+
+// Ignore GPS noise if movement < 5 meters
+if (movementDistance > 0.005) {
+
+  double newBearing =
+      _calculateBearing(previousLocation!, ambulanceLocation!);
+
+  double diff = (newBearing - ambulanceBearing).abs();
+
+  if (diff > 40) {
+    ambulanceBearing = ( newBearing -ambulanceBearing)* 0.3 + ambulanceBearing;
+  }
+
+}
+
+}
+
         await _animateAmbulance();
 
         _checkPatientReached();
 
         _loadMarkers();
 
-        if (ambulanceLocation != null) {
-  mapController.animateCamera(
-    CameraUpdate.newLatLng(ambulanceLocation!),
-  );
-}
+        
 
         if (mapReady) {
           await _drawRoute();
@@ -144,7 +181,9 @@ Future<void> _fetchDriverLocation() async {
         Marker(
           markerId: const MarkerId("ambulance"),
           position: ambulanceLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
+          rotation: ambulanceBearing,
+anchor: const Offset(0.5, 0.5),
+          icon: ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueGreen,
           ),
           infoWindow: const InfoWindow(title: "Ambulance"),
@@ -247,8 +286,43 @@ if (data["routes"].isNotEmpty) {
 
   final step = leg["steps"][0];
 
-nextInstruction = step["html_instructions"]
-    .replaceAll(RegExp(r'<[^>]*>'), '');
+String distance = step["distance"]["text"];
+
+if (distance.contains("km")) {
+  double km = double.parse(distance.replaceAll(" km", ""));
+
+  if (km < 1) {
+    int meters = (km * 1000).round();
+    distance = "$meters m";
+  }
+}
+String maneuver = step["maneuver"] ?? "straight";
+
+String instruction = "";
+
+if (maneuver == "turn-right") {
+  instruction = "Turn right in $distance";
+  navigationIcon = Icons.turn_right;
+}
+else if (maneuver == "turn-left") {
+  instruction = "Turn left in $distance";
+  navigationIcon = Icons.turn_left;
+}
+else if (maneuver == "uturn-left" || maneuver == "uturn-right") {
+  instruction = "Make a U-turn in $distance";
+  navigationIcon = Icons.u_turn_left;
+}
+else {
+  instruction = "Continue straight for $distance";
+  navigationIcon = Icons.arrow_upward;
+}
+
+nextInstruction = instruction;
+
+if (instruction != lastSpokenInstruction) {
+  lastSpokenInstruction = instruction;
+  await flutterTts.speak(instruction);
+}
 
   setState(() {
     distanceText = leg["distance"]["text"];
@@ -280,7 +354,39 @@ nextInstruction = step["html_instructions"]
 
   _drawRoute();
 }
+Future<void> _completeEmergency() async {
 
+  if (emergencyId == null) return;
+
+  try {
+
+    await http.put(
+      Uri.parse(
+        "https://resqnet-backend-1xe3.onrender.com/api/citizen-emergency/update-status/$emergencyId",
+      ),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "status": "completed",
+      }),
+    );
+
+    setState(() {
+      tripCompleted = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Emergency marked as completed"),
+      ),
+    );
+
+  } catch (e) {
+    print("Completion error: $e");
+  }
+
+}
 
   /* ================= DISTANCE ================= */
 
@@ -329,20 +435,78 @@ Future<void> _animateAmbulance() async {
         Marker(
           markerId: const MarkerId("ambulance"),
           position: intermediate,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
+          rotation: ambulanceBearing,
+anchor: const Offset(0.5, 0.5),
+          icon: ambulanceIcon ?? BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueGreen,
           ),
           infoWindow: const InfoWindow(title: "Ambulance"),
         ),
       );
     });
+    if (mapReady && i == steps - 1 && !userMovedMap) {
+
+  LatLng cameraTarget =
+      _getPointAhead(ambulanceLocation!, ambulanceBearing);
+
+  double diff = (ambulanceBearing - lastCameraBearing).abs();
+
+  // Rotate camera ONLY when there is real turn
+  if (diff > 30) {
+
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: cameraTarget,
+          zoom: 18,
+          bearing: ambulanceBearing,
+          tilt: 60,
+        ),
+      ),
+    );
+
+    lastCameraBearing = ambulanceBearing;
+  }
+
+}
 
     await Future.delayed(const Duration(milliseconds: 100));
   }
 }
 
+double _calculateBearing(LatLng start, LatLng end) {
+  double lat1 = _deg2rad(start.latitude);
+  double lon1 = _deg2rad(start.longitude);
+  double lat2 = _deg2rad(end.latitude);
+  double lon2 = _deg2rad(end.longitude);
+
+  double dLon = lon2 - lon1;
+
+  double y = sin(dLon) * cos(lat2);
+  double x = cos(lat1) * sin(lat2) -
+      sin(lat1) * cos(lat2) * cos(dLon);
+
+  double bearing = atan2(y, x);
+
+  bearing = bearing * 180 / pi;
+  bearing = (bearing + 360) % 360;
+
+  return bearing;
+}
+
 double _deg2rad(double deg) {
   return deg * (pi / 180);
+}
+
+LatLng _getPointAhead(LatLng position, double bearing) {
+  const double distance = 0.0005; // around 30 meters
+
+  double rad = bearing * pi / 180;
+
+  double newLat = position.latitude + distance * cos(rad);
+  double newLng = position.longitude + distance * sin(rad);
+
+  return LatLng(newLat, newLng);
 }
 
   /* ================= UI ================= */
@@ -358,14 +522,19 @@ double _deg2rad(double deg) {
   children: [
 
     GoogleMap(
+      padding: const EdgeInsets.only(top: 140 , right: 10),
+      compassEnabled: true,
       initialCameraPosition: CameraPosition(
         target: LatLng(widget.patientLat, widget.patientLng),
-        zoom: 14,
+        zoom: 17,
       ),
       markers: markers,
       polylines: polylines,
       myLocationEnabled: true,
-      myLocationButtonEnabled: true,
+      myLocationButtonEnabled: false,
+      onCameraMoveStarted: () {
+        userMovedMap = true;
+      },
       onMapCreated: (controller) {
 
         mapController = controller;
@@ -382,50 +551,137 @@ double _deg2rad(double deg) {
     ),
 
     Positioned(
-      top: 20,
-      left: 20,
-      right: 20,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(color: Colors.black26, blurRadius: 5)
-          ],
+  top: 15,
+  left: 16,
+  right: 16,
+  child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 8,
+          offset: Offset(0,3),
+        )
+      ],
+    ),
+    child: Row(
+      children: [
+
+        // Navigation Icon
+        Container(
+          height: 42,
+          width: 42,
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            navigationIcon,
+            color: Colors.green,
+            size: 26,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-  Text("Distance: $distanceText"),
-  Text("ETA: $etaText"),
-  const SizedBox(height: 6),
-  Text(
-    nextInstruction,
-    style: const TextStyle(
-      fontWeight: FontWeight.bold,
+
+        const SizedBox(width: 12),
+
+        // Instruction + ETA
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              Text(
+                nextInstruction,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                "$distanceText • $etaText",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+              ),
+
+            ],
+          ),
+        ),
+
+      ],
     ),
   ),
-],
-        ),
-      ),
-    ),
+),
+
+    Positioned(
+  bottom: 110,
+  right: 20,
+  child: FloatingActionButton(
+    backgroundColor: Colors.white,
+    child: const Icon(Icons.my_location, color: Colors.blue),
+    onPressed: () {
+
+      userMovedMap = false;
+
+      if (ambulanceLocation != null) {
+
+        LatLng cameraTarget =
+            _getPointAhead(ambulanceLocation!, ambulanceBearing);
+
+        mapController.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: cameraTarget,
+              zoom: 18,
+              bearing: ambulanceBearing,
+              tilt: 60,
+            ),
+          ),
+        );
+
+      }
+
+    },
+  ),
+),
+
     Positioned(
   bottom: 30,
   left: 80,
   right: 80,
   child: ElevatedButton(
-    onPressed: _markPatientReached,
+    onPressed: tripCompleted
+    ? null
+    : () {
+
+        if (!reachedPatient) {
+
+          _markPatientReached();
+
+        } else {
+
+          _completeEmergency();
+
+        }
+
+      },
     style: ElevatedButton.styleFrom(
       backgroundColor: Colors.green,
-      padding: const EdgeInsets.symmetric(vertical: 15),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(30),
       ),
     ),
-    child: const Text(
-      "ARRIVED",
-      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    child: Text(
+      reachedPatient ? "COMPLETED" : "ARRIVED",
+      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
     ),
   ),
 ),

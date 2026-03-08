@@ -94,11 +94,7 @@ class _ActiveCaseScreenState
               CrossAxisAlignment.start,
           children: [
 
-            Text(
-  hospital.toString(),
-  style: const TextStyle(color: Colors.blue),
-),
-const SizedBox(height: 10),
+           
 
             /* ===== PATIENT INFO ===== */
 
