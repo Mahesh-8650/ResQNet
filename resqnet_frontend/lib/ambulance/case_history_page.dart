@@ -288,21 +288,22 @@ String _formatTime(String dateString) {
                                       height: 8),
 
                                   // Patient Location
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                          Icons
-                                              .location_on,
-                                          size: 18,
-                                          color: Colors
-                                              .red),
-                                      const SizedBox(
-                                          width: 5),
-                                     Text(
-  addressMap[caseItem["_id"]] ?? "Loading address...",
+                                 Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    const Icon(Icons.location_on, size: 18, color: Colors.red),
+    const SizedBox(width: 5),
+
+    Expanded(
+      child: Text(
+        addressMap[caseItem["_id"]] ?? "Loading address...",
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14),
+      ),
+    ),
+  ],
 ),
-                                    ],
-                                  ),
 
                                   const SizedBox(
                                       height: 5),

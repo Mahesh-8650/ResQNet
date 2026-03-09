@@ -794,7 +794,7 @@ router.get("/hospital/:id/completed", async (req, res) => {
       hospitalId: hospitalId,
       status: "completed",
     })
-      .populate("ambulanceId", "fullName vehicleNumber phone")
+      .populate("completedBy", "fullName vehicleNumber phone")
       .sort({ updatedAt: -1 });
 
     return res.json(completedRequests);

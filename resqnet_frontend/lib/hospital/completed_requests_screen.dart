@@ -142,7 +142,7 @@ class _CompletedRequestsScreenState
                         itemBuilder: (context, index) {
 
                           final req = filteredRequests[index];
-                          final ambulance = req["ambulanceId"];
+                          final ambulance = req["completedBy"];
 
                           return Card(
                             elevation: 6,
@@ -211,7 +211,7 @@ class _CompletedRequestsScreenState
                                       const SizedBox(height: 6),
 
                                       Text(
-                                          "Ambulance: ${ambulance?["fullName"] ?? ""}"),
+                                          "Ambulance: ${ambulance?["fullName"] ?? "Not available"}"),
 
                                       Text(
                                           "Vehicle: ${ambulance?["vehicleNumber"] ?? ""}"),

@@ -39,7 +39,13 @@ void initState() {
   Widget build(BuildContext context) {
 
     final data = widget.emergencyData;
-    final location = data["patientLocation"] ?? {};
+    final location = data["patientLocation"];
+
+if (location == null) {
+  return const Scaffold(
+    body: Center(child: CircularProgressIndicator()),
+  );
+}
    
     final hospital = data["hospitalId"];
 
@@ -119,14 +125,26 @@ _primaryButton(
     }
 
     final patientCoords = patientLocation["coordinates"];
-    final hospitalCoords = hospital["location"]["coordinates"];
+final hospitalCoords = hospital["location"]["coordinates"];
 
-    double patientLng = (patientCoords[0] as num).toDouble();
-    double patientLat = (patientCoords[1] as num).toDouble();
+if (patientCoords == null ||
+    hospitalCoords == null ||
+    patientCoords is! List ||
+    hospitalCoords is! List ||
+    patientCoords.length < 2 ||
+    hospitalCoords.length < 2) {
 
-    double hospitalLng = (hospitalCoords[0] as num).toDouble();
-    double hospitalLat = (hospitalCoords[1] as num).toDouble();
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Invalid location data")),
+  );
+  return;
+}
 
+double patientLng = (patientCoords[0] as num).toDouble();
+double patientLat = (patientCoords[1] as num).toDouble();
+
+double hospitalLng = (hospitalCoords[0] as num).toDouble();
+double hospitalLat = (hospitalCoords[1] as num).toDouble();
     Navigator.push(
       context,
       MaterialPageRoute(
