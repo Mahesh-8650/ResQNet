@@ -3,6 +3,7 @@ import CitizenEmergency from "../models/CitizenEmergency.js";
 import Ambulance from "../models/Ambulance.js";
 import Hospital from "../models/Hospital.js";
 import admin from "../config/firebaseAdmin.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
