@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'ambulance_map_page.dart';
 
 class ActiveCaseScreen extends StatefulWidget {
@@ -26,42 +25,12 @@ class _ActiveCaseScreenState
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
 
-  String patientAddress = "Loading address...";
 
-  Future<void> _getAddress(double lat, double lng) async {
 
-  final url =
-      "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
-
-  final response = await http.get(Uri.parse(url));
-
-  if (response.statusCode == 200) {
-
-    final data = jsonDecode(response.body);
-
-    if (data["results"].isNotEmpty) {
-
-      setState(() {
-        patientAddress =
-            data["results"][0]["formatted_address"];
-      });
-
-    }
-
-  }
-}
-
+ 
 @override
 void initState() {
   super.initState();
-
-  final data = widget.emergencyData;
-  final location = data["patientLocation"] ?? {};
-  final coords = location["coordinates"];
-
-  if (coords != null) {
-    _getAddress(coords[1], coords[0]);
-  }
 }
   
   /* ================= UI ================= */
@@ -114,7 +83,7 @@ void initState() {
 
 _infoCard(
   "Patient Location",
-  patientAddress,
+  data["patientAddress"] ?? "Address unavailable",
   Icons.location_on,
 ),
 
@@ -138,24 +107,25 @@ _primaryButton(
   "Navigate",
   () {
 
-    final patientCoords = data["patientLocation"]["coordinates"];
+    final patientLocation = data["patientLocation"];
     final hospital = data["hospitalId"];
 
-    // 🚑 Safety check
-    if (hospital == null) {
+    // Safety check
+    if (patientLocation == null || hospital == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Hospital data unavailable")),
+        const SnackBar(content: Text("Location data unavailable")),
       );
       return;
     }
 
+    final patientCoords = patientLocation["coordinates"];
     final hospitalCoords = hospital["location"]["coordinates"];
 
-    double patientLng = patientCoords[0];
-    double patientLat = patientCoords[1];
+    double patientLng = (patientCoords[0] as num).toDouble();
+    double patientLat = (patientCoords[1] as num).toDouble();
 
-    double hospitalLng = hospitalCoords[0];
-    double hospitalLat = hospitalCoords[1];
+    double hospitalLng = (hospitalCoords[0] as num).toDouble();
+    double hospitalLat = (hospitalCoords[1] as num).toDouble();
 
     Navigator.push(
       context,
@@ -172,7 +142,6 @@ _primaryButton(
 
   },
 ),
-
             
           ],
         ),

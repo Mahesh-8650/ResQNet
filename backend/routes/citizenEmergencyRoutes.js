@@ -20,6 +20,7 @@ router.post("/create", async (req, res) => {
       latitude,
       longitude,
       hospitalId,
+      patientAddress
     } = req.body;
     // 🚨 Prevent duplicate active emergency
 const existingEmergency = await CitizenEmergency.findOne({
@@ -65,6 +66,7 @@ if (!hospitalId) {
       patientName,
       patientPhone,
       emergencyType,
+      patientAddress,
       patientLocation: {
   type: "Point",
   coordinates: [longitude, latitude],

@@ -24,6 +24,7 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
 
   List<dynamic> allCases = [];
   List<dynamic> filteredCases = [];
+  Map<String, String> addressMap = {};
 
   bool isLoading = true;
 
@@ -33,7 +34,7 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
     _fetchHistory();
   }
 
-  Future<void> _fetchHistory() async {
+Future<void> _fetchHistory() async {
   try {
     final response = await http.get(
       Uri.parse(
@@ -49,8 +50,20 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
         filteredCases = allCases;
         isLoading = false;
       });
+
+      // 🔥 Fetch address for each case
+      for (var caseItem in allCases) {
+
+        final coords = caseItem["patientLocation"]["coordinates"];
+
+        double lng = coords[0];
+        double lat = coords[1];
+
+        _getAddress(caseItem["_id"], lat, lng);
+
+      }
+
     } else {
-      // 🔥 If backend error
       setState(() {
         isLoading = false;
         allCases = [];
@@ -58,12 +71,34 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
       });
     }
   } catch (e) {
-    // 🔥 If network error
     setState(() {
       isLoading = false;
       allCases = [];
       filteredCases = [];
     });
+  }
+}
+
+Future<void> _getAddress(String id, double lat, double lng) async {
+
+  final url =
+      "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+
+  final response = await http.get(Uri.parse(url));
+
+  if (response.statusCode == 200) {
+
+    final data = jsonDecode(response.body);
+
+    if (data["results"].isNotEmpty) {
+
+      setState(() {
+        addressMap[id] =
+            data["results"][0]["formatted_address"];
+      });
+
+    }
+
   }
 }
 
@@ -88,15 +123,15 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
     });
   }
 
-  String _formatDate(String dateString) {
-    final date = DateTime.parse(dateString);
-    return "${date.day}-${date.month}-${date.year}";
-  }
+String _formatDate(String dateString) {
+  final date = DateTime.parse(dateString).toLocal();
+  return "${date.day}-${date.month}-${date.year}";
+}
 
-  String _formatTime(String dateString) {
-    final date = DateTime.parse(dateString);
-    return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
-  }
+String _formatTime(String dateString) {
+  final date = DateTime.parse(dateString).toLocal();
+  return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+}
 
   @override
   Widget build(BuildContext context) {
@@ -263,10 +298,8 @@ class _CaseHistoryPageState extends State<CaseHistoryPage> {
                                               .red),
                                       const SizedBox(
                                           width: 5),
-                                      Text(
-  caseItem["patientLocation"] != null
-      ? "Lat: ${caseItem["patientLocation"]["latitude"]}  Lng: ${caseItem["patientLocation"]["longitude"]}"
-      : "Location unavailable",
+                                     Text(
+  addressMap[caseItem["_id"]] ?? "Loading address...",
 ),
                                     ],
                                   ),

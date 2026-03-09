@@ -160,6 +160,20 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
     try {
 
+      String address = "";
+
+final url =
+    "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+
+final geoResponse = await http.get(Uri.parse(url));
+
+if (geoResponse.statusCode == 200) {
+  final data = jsonDecode(geoResponse.body);
+
+  if (data["results"].isNotEmpty) {
+    address = data["results"][0]["formatted_address"];
+  }
+}
       final response = await http.post(
         Uri.parse("$baseUrl/api/citizen-emergency/create"),
         headers: {
@@ -171,6 +185,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
           "emergencyType": "General Emergency",
           "latitude": latitude,
           "longitude": longitude,
+          "patientAddress": address,
           "hospitalId": selectedHospitalId,
         }),
       );
