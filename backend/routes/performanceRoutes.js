@@ -13,9 +13,9 @@ router.get("/:ambulanceId", async (req, res) => {
 
     // ✅ Total Completed Cases
     const totalCompleted = await CitizenEmergency.countDocuments({
-      ambulanceId,
-      status: "completed",
-    });
+  completedBy: ambulanceId,
+  status: "completed",
+});
 
     // ✅ This Month Completed Cases
     const now = new Date();
@@ -26,14 +26,14 @@ router.get("/:ambulanceId", async (req, res) => {
     );
 
     const monthlyCompleted = await CitizenEmergency.countDocuments({
-      ambulanceId,
+      completedBy: ambulanceId,
       status: "completed",
       completedAt: { $gte: firstDayOfMonth },
     });
 
     // ✅ Fetch all completed cases for calculations
     const completedCases = await CitizenEmergency.find({
-      ambulanceId,
+      completedBy: ambulanceId,
       status: "completed",
     });
 

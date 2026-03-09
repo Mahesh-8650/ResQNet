@@ -64,6 +64,11 @@ completedAt: {
   default: null,
 },
 
+completedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Ambulance",
+},
+
 responseTimeInSeconds: {
   type: Number,
   default: 0,

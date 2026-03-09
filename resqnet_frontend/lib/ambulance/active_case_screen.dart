@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'navigation_placeholder_screen.dart';
 import 'ambulance_map_page.dart';
 
 class ActiveCaseScreen extends StatefulWidget {
@@ -27,46 +26,44 @@ class _ActiveCaseScreenState
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
 
-  bool navigatedToPatient = false;
-  bool navigatedToHospital = false;
+  String patientAddress = "Loading address...";
 
-  /* ================= COMPLETE CASE ================= */
+  Future<void> _getAddress(double lat, double lng) async {
 
-  Future<void> _completeCase() async {
-    try {
-      final response = await http.put(
-        Uri.parse(
-          "$baseUrl/api/citizen-emergency/update-status/${widget.emergencyId}",
-        ),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"status": "completed"}),
-      );
+  final url =
+      "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
 
-      if (response.statusCode == 200) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Failed to complete case"),
-        ),
-      );
+  final response = await http.get(Uri.parse(url));
+
+  if (response.statusCode == 200) {
+
+    final data = jsonDecode(response.body);
+
+    if (data["results"].isNotEmpty) {
+
+      setState(() {
+        patientAddress =
+            data["results"][0]["formatted_address"];
+      });
+
     }
+
   }
+}
 
-  /* ================= NAVIGATION PLACEHOLDER ================= */
+@override
+void initState() {
+  super.initState();
 
-  void _openNavigation(String title) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NavigationPlaceholderScreen(
-          title: title,
-        ),
-      ),
-    );
+  final data = widget.emergencyData;
+  final location = data["patientLocation"] ?? {};
+  final coords = location["coordinates"];
+
+  if (coords != null) {
+    _getAddress(coords[1], coords[0]);
   }
-
+}
+  
   /* ================= UI ================= */
 
   @override
@@ -74,6 +71,7 @@ class _ActiveCaseScreenState
 
     final data = widget.emergencyData;
     final location = data["patientLocation"] ?? {};
+   
     final hospital = data["hospitalId"];
 
     return Scaffold(
@@ -116,9 +114,7 @@ class _ActiveCaseScreenState
 
 _infoCard(
   "Patient Location",
-  location["coordinates"] != null
-      ? "${location["coordinates"][1]}, ${location["coordinates"][0]}"
-      : "- , -",
+  patientAddress,
   Icons.location_on,
 ),
 
@@ -138,23 +134,28 @@ const SizedBox(height: 30),
 
             /* ===== BUTTON FLOW ===== */
 
-            if (!navigatedToPatient)
-             _primaryButton(
-  "Navigate to Patient",
+_primaryButton(
+  "Navigate",
   () {
 
-    final patientCoords =
-    data["patientLocation"]["coordinates"];
+    final patientCoords = data["patientLocation"]["coordinates"];
+    final hospital = data["hospitalId"];
 
-final hospital = data["hospitalId"];
-final hospitalCoords =
-    hospital["location"]["coordinates"];
+    // 🚑 Safety check
+    if (hospital == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Hospital data unavailable")),
+      );
+      return;
+    }
 
-double patientLng = patientCoords[0];
-double patientLat = patientCoords[1];
+    final hospitalCoords = hospital["location"]["coordinates"];
 
-double hospitalLng = hospitalCoords[0];
-double hospitalLat = hospitalCoords[1];
+    double patientLng = patientCoords[0];
+    double patientLat = patientCoords[1];
+
+    double hospitalLng = hospitalCoords[0];
+    double hospitalLat = hospitalCoords[1];
 
     Navigator.push(
       context,
@@ -169,35 +170,10 @@ double hospitalLat = hospitalCoords[1];
       ),
     );
 
-    setState(() {
-      navigatedToPatient = true;
-    });
-
   },
 ),
 
-            if (navigatedToPatient && !navigatedToHospital)
-              Padding(
-                padding: const EdgeInsets.only(top: 15),
-                child: _primaryButton(
-                  "Route to Hospital",
-                  () {
-                    setState(() {
-                      navigatedToHospital = true;
-                    });
-                    _openNavigation("Route to Hospital");
-                  },
-                ),
-              ),
-
-            if (navigatedToHospital)
-              Padding(
-                padding: const EdgeInsets.only(top: 15),
-                child: _primaryButton(
-                  "Complete Case",
-                  _completeCase,
-                ),
-              ),
+            
           ],
         ),
       ),

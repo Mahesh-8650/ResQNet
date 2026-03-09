@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ResQNet Admin - Live Map</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI, Arial;
+}
+
+body{
+display:flex;
+background:#f5f7fb;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:white;
+border-right:1px solid #e5e7eb;
+height:100vh;
+display:flex;
+flex-direction:column;
+position:fixed;
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+padding:20px;
+font-weight:600;
+}
+
+.logo i{
+background:#2563eb;
+color:white;
+padding:10px;
+border-radius:8px;
+}
+
+.menu a{
+display:flex;
+gap:12px;
+padding:14px 20px;
+text-decoration:none;
+color:#555;
+border-radius:8px;
+}
+
+.menu a.active{
+background:#eef2ff;
+color:#2563eb;
+}
+
+.profile{
+margin-top:auto;
+padding:20px;
+display:flex;
+gap:10px;
+border-top:1px solid #eee;
+}
+
+.avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#2563eb;
+}
+
+/* MAIN */
+
+.main{
+margin-left:240px;
+flex:1;
+}
+
+.topbar{
+background:white;
+height:80px;
+display:flex;
+align-items:center;
+padding:0 30px;
+border-bottom:1px solid #eee;
+}
+
+.page-title h2{
+font-size:20px;
+font-weight:600;
+}
+
+.page-title p{
+font-size:13px;
+color:#6b7280;
+margin-top:3px;
+}
+
+.map-container{
+padding:30px;
+}
+
+#map{
+height:600px;
+width:100%;
+border-radius:12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<div class="logo">
+<i class="fa-solid fa-star"></i>
+ResQNet
+</div>
+
+<div class="menu">
+<a href="index.html"><i class="fa fa-chart-line"></i> Dashboard</a>
+<a href="pending.html"><i class="fa fa-clock"></i> Pending</a>
+<a href="approved.html"><i class="fa fa-check-circle"></i> Approved</a>
+<a href="rejected.html"><i class="fa fa-times-circle"></i> Rejected</a>
+<a class="active"><i class="fa fa-map-location-dot"></i> Live Map</a>
+</div>
+
+<div class="profile">
+<div class="avatar"></div>
+<div>
+<div>ResQNet Control</div>
+<small>Emergency Admin</small>
+</div>
+</div>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+<div class="page-title">
+<h2>Live Resource Map</h2>
+<p>Track hospitals and ambulances in real-time</p>
+</div>
+</div>
+
+<div class="map-container">
+<div id="map"></div>
+</div>
+
+</div>
+
+<script>
+
+const BASE_URL="https://resqnet-backend-1xe3.onrender.com";
+
+let map;
+let ambulanceMarkers=[];
+
+function initMap(){
+
+map=new google.maps.Map(document.getElementById("map"),{
+center:{lat:17.385044,lng:78.486671},
+zoom:11
+});
+
+/* LOAD DATA */
+
+loadHospitals();
+loadAmbulances();
+
+/* POLLING */
+
+setInterval(loadAmbulances,5000);
+
+}
+
+/* LOAD HOSPITALS */
+
+async function loadHospitals(){
+
+const res=await fetch(BASE_URL+"/api/admin/hospitals/approved");
+const data=await res.json();
+
+data.hospitals.forEach(h=>{
+
+const coords=h.location.coordinates;
+
+const lat=coords[1];
+const lng=coords[0];
+
+const marker=new google.maps.Marker({
+position:{lat,lng},
+map:map,
+label:"🏥"
+});
+
+const info=new google.maps.InfoWindow({
+content:`
+<b>🏥 ${h.hospitalName}</b><br>
+📞 ${h.phone}<br>
+📍 ${h.address}
+`
+});
+
+marker.addListener("click",()=>{
+info.open(map,marker);
+});
+
+});
+
+}
+
+/* LOAD AMBULANCES */
+
+async function loadAmbulances(){
+
+const res=await fetch(BASE_URL+"/api/admin/ambulances/approved");
+const data=await res.json();
+
+/* REMOVE OLD MARKERS */
+
+ambulanceMarkers.forEach(m=>m.setMap(null));
+ambulanceMarkers=[];
+
+data.ambulances.forEach(a=>{
+
+const coords=a.currentLocation.coordinates;
+
+const lat=coords[1];
+const lng=coords[0];
+
+let status="Offline";
+
+if(a.isAvailable) status="Available";
+if(a.isBusy) status="On Mission";
+
+const marker=new google.maps.Marker({
+position:{lat,lng},
+map:map,
+label:"🚑"
+});
+
+const info=new google.maps.InfoWindow({
+content:`
+<b>🚑 Vehicle: ${a.vehicleNumber}</b><br>
+Driver: ${a.fullName}<br>
+Status: ${status}
+`
+});
+
+marker.addListener("click",()=>{
+info.open(map,marker);
+});
+
+ambulanceMarkers.push(marker);
+
+});
+
+}
+
+</script>
+
+<!-- GOOGLE MAPS API -->
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADQs7Xwc8xqXc4Jg85jkFC_19Y9yvyc9Q&callback=initMap" async defer></script>
+
+</body>
+</html>

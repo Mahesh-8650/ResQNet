@@ -40,12 +40,25 @@ if (existingEmergency) {
 
     let assignedHospitalId = hospitalId || null;
 
-    if (!hospitalId) {
-      const hospitals = await Hospital.find();
-      if (hospitals.length > 0) {
-        assignedHospitalId = hospitals[0]._id;
+if (!hospitalId) {
+
+  const nearestHospital = await Hospital.findOne({
+    status: "approved",
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [longitude, latitude],
+        },
+        $maxDistance: 20000
       }
     }
+  });
+
+  if (nearestHospital) {
+    assignedHospitalId = nearestHospital._id;
+  }
+}
 
     const emergency = await CitizenEmergency.create({
       patientName,
@@ -268,6 +281,35 @@ router.put("/update-status/:id", async (req, res) => {
 
     emergency.status = "completed";
     emergency.completedAt = new Date();
+    emergency.completedBy = emergency.ambulanceId;
+    // Calculate distance (Patient → Hospital)
+
+const [patientLng, patientLat] = emergency.patientLocation.coordinates;
+
+const hospital = await Hospital.findById(emergency.hospitalId);
+
+if (hospital && hospital.location && hospital.location.coordinates) {
+
+  const [hospitalLng, hospitalLat] = hospital.location.coordinates;
+
+  const R = 6371;
+
+  const dLat = (hospitalLat - patientLat) * Math.PI / 180;
+  const dLng = (hospitalLng - patientLng) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(patientLat*Math.PI/180) *
+    Math.cos(hospitalLat*Math.PI/180) *
+    Math.sin(dLng/2) *
+    Math.sin(dLng/2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const distance = R * c;
+
+  emergency.distanceCoveredKm = distance;
+}
 
     if (emergency.ambulanceId) {
       await Ambulance.findByIdAndUpdate(
@@ -299,7 +341,7 @@ router.get("/history/:ambulanceId", async (req, res) => {
     const { ambulanceId } = req.params;
 
     const history = await CitizenEmergency.find({
-      ambulanceId: ambulanceId,
+      completedBy: new mongoose.Types.ObjectId(ambulanceId),
       status: "completed",
     })
       .populate("hospitalId", "hospitalName")
