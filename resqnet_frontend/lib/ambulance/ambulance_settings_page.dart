@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../welcome/welcome_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AmbulanceSettingsPage extends StatefulWidget {
   final String ambulanceId;
@@ -218,15 +219,20 @@ class _AmbulanceSettingsPageState
 
   /* ================= LOGOUT ================= */
 
-  void _logout() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const WelcomeScreen(),
-      ),
-      (route) => false,
-    );
-  }
+Future<void> _logout() async {
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  await prefs.clear();
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const WelcomeScreen(),
+    ),
+    (route) => false,
+  );
+}
 
   /* ================= UI ================= */
 

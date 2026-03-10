@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../hospital/hospital_home_screen.dart';
 import '../ambulance/ambulance_home_screen.dart';
@@ -94,6 +95,18 @@ class _OtpScreenState extends State<OtpScreen> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
+
+await prefs.setBool("isLoggedIn", true);
+await prefs.setString("role", data["account"]?["role"] ?? "");
+await prefs.setString("userId", data["account"]?["_id"] ?? "");
+
+// 🚑 Save extra data for auto login
+await prefs.setString("hospitalName", data["account"]?["hospitalName"] ?? "");
+await prefs.setString("fullName", data["account"]?["fullName"] ?? "");
+await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
 
         final role = data["account"]?["role"];
 

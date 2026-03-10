@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="resqnet_frontend"
+        android:label="ResQNet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
     <meta-data

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'incoming_requests_screen.dart';
 import 'completed_requests_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../welcome/welcome_screen.dart';
 
 class HospitalHomeScreen extends StatefulWidget {
   final String hospitalName;
@@ -80,6 +82,21 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
       showMessage("Error", "Server connection failed");
     }
   }
+
+Future<void> _logout() async {
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  await prefs.clear();
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const WelcomeScreen(),
+    ),
+    (route) => false,
+  );
+}
 
   void showMessage(String title, String message) {
     showDialog(
@@ -300,6 +317,22 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
               );
             },
           ),
+          const SizedBox(height: 20),
+
+SizedBox(
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.red,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+    onPressed: _logout,
+    child: const Text("Logout"),
+  ),
+),
         ],
       ),
     );

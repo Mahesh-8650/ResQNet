@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome/welcome_screen.dart';
+import 'citizen/citizen_home_page.dart';
+import 'ambulance/ambulance_home_screen.dart';
+import 'hospital/hospital_home_screen.dart';
 
 /// Background message handler
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
@@ -12,18 +15,83 @@ Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔥 Initialize Firebase
   await Firebase.initializeApp();
 
-  // 🔥 Enable background messaging
   FirebaseMessaging.onBackgroundMessage(
       _firebaseBackgroundHandler);
 
-  runApp(const ResQNetApp());
-}
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
+  bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
+String role = prefs.getString("role") ?? "";
+String userId = prefs.getString("userId") ?? "";
+String hospitalName = prefs.getString("hospitalName") ?? "";
+String fullName = prefs.getString("fullName") ?? "";
+String vehicleNumber = prefs.getString("vehicleNumber") ?? "";
+
+runApp(
+  ResQNetApp(
+    isLoggedIn: isLoggedIn,
+    role: role,
+    userId: userId,
+    hospitalName: hospitalName,
+    fullName: fullName,
+    vehicleNumber: vehicleNumber,
+  ),
+);
+}
 class ResQNetApp extends StatelessWidget {
-  const ResQNetApp({super.key});
+
+  final bool isLoggedIn;
+final String role;
+final String userId;
+final String hospitalName;
+final String fullName;
+final String vehicleNumber;
+
+  const ResQNetApp({
+  super.key,
+  required this.isLoggedIn,
+  required this.role,
+  required this.userId,
+  required this.hospitalName,
+  required this.fullName,
+  required this.vehicleNumber,
+});
+
+ Widget _getHomeScreen() {
+
+  if (role == "citizen") {
+    return CitizenHomePage(
+      citizenId: userId,
+      userName: "",
+      email: "",
+      phone: "",
+      bloodGroup: "",
+      dob: "",
+      emergencyContact: "",
+    );
+  }
+
+  if (role == "ambulance") {
+    return AmbulanceHomeScreen(
+      ambulanceId: userId,
+      ambulanceName: fullName,
+      vehicleNumber: vehicleNumber,
+      isAvailable: false,
+      isBusy: false,
+    );
+  }
+
+  if (role == "hospital") {
+    return HospitalHomeScreen(
+      hospitalName: hospitalName,
+      hospitalId: userId,
+    );
+  }
+
+  return const WelcomeScreen();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +158,9 @@ class ResQNetApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const WelcomeScreen(),
+      home: isLoggedIn
+    ? _getHomeScreen()
+    : const WelcomeScreen(),
     );
   }
 }

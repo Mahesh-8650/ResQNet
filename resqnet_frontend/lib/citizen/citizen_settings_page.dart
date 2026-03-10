@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../welcome/welcome_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CitizenSettingsPage extends StatefulWidget {
   final String citizenId;
@@ -295,16 +296,20 @@ class _CitizenSettingsPageState extends State<CitizenSettingsPage> {
   /* LOGOUT */
   /* ===================================================== */
 
-  void _logout() {
+Future<void> _logout() async {
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const WelcomeScreen(),
-      ),
-      (route) => false,
-    );
-  }
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  await prefs.clear();
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const WelcomeScreen(),
+    ),
+    (route) => false,
+  );
+}
 
   /* ===================================================== */
   /* UI */
