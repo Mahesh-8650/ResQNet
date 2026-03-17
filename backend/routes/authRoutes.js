@@ -25,6 +25,9 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -206,10 +209,10 @@ router.post(
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const hashedOtp = await bcrypt.hash(otp, 10);
 
-      await Otp.deleteMany({ phone });
+      await Otp.deleteMany({ email });
 
       await Otp.create({
-        phone,
+        email,
         otp: hashedOtp,
         expiresAt: new Date(Date.now() + 2 * 60 * 1000),
         registrationData: {
@@ -319,10 +322,10 @@ router.post(
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const hashedOtp = await bcrypt.hash(otp, 10);
 
-      await Otp.deleteMany({ phone });
+      await Otp.deleteMany({ email });
 
       await Otp.create({
-        phone,
+        email,
         otp: hashedOtp,
         expiresAt: new Date(Date.now() + 2 * 60 * 1000),
         registrationData: {
@@ -388,10 +391,10 @@ router.post("/send-otp", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    await Otp.deleteMany({ phone });
+    await Otp.deleteMany({ email });
 
     await Otp.create({
-      phone,
+      email,
       otp: hashedOtp,
       expiresAt: new Date(Date.now() + 2 * 60 * 1000),
     });
@@ -445,7 +448,7 @@ router.post("/verify-otp", async (req, res) => {
     if (!account && record.registrationData?.type === "citizen") {
       account = await User.create({
         ...record.registrationData,
-        email,
+        phone: record.registrationData?.phone,
         role: "citizen",
         status: "approved",
       });
