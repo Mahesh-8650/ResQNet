@@ -116,7 +116,7 @@ router.post("/register/user", async (req, res) => {
     });
 
 await emailApi.sendTransacEmail({
-  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  sender: { email: "nmahesh18991@gmail.com", name: "ResQNet" },
   to: [{ email: email }],
   subject: "ResQNet Verification OTP",
   textContent: `Your ResQNet verification OTP is ${otp}`
@@ -223,7 +223,7 @@ router.post(
       });
 
    await emailApi.sendTransacEmail({
-  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  sender: { email: "nmahesh18991@gmail.com", name: "ResQNet" },
   to: [{ email: email }],
   subject: "ResQNet Hospital Verification OTP",
   textContent: `Your ResQNet hospital verification OTP is ${otp}`
@@ -337,7 +337,7 @@ router.post(
       });
 
     await emailApi.sendTransacEmail({
-  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  sender: { email: "nmahesh18991@gmail.com", name: "ResQNet" },
   to: [{ email: email }],
   subject: "ResQNet Ambulance Verification OTP",
   textContent: `Your ResQNet ambulance verification OTP is ${otp}`
@@ -395,7 +395,7 @@ router.post("/send-otp", async (req, res) => {
     });
 
 await emailApi.sendTransacEmail({
-  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  sender: { email: "nmahesh18991@gmail.com", name: "ResQNet" },
   to: [{ email: email }],
   subject: "ResQNet Login OTP",
   textContent: `Your ResQNet login OTP is ${otp}`
