@@ -11,12 +11,12 @@ import '../citizen/citizen_home_page.dart';
 
 
 class OtpScreen extends StatefulWidget {
-  final String phone;
+  final String email;
   final bool isRegisterFlow;
 
   const OtpScreen({
     super.key,
-    required this.phone,
+    required this.email,
     this.isRegisterFlow = true,
   });
 
@@ -86,7 +86,7 @@ class _OtpScreenState extends State<OtpScreen> {
         Uri.parse("$baseUrl/api/auth/verify-otp"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "phone": widget.phone,
+          "email": widget.email,
           "otp": _otp,
           "fcmToken": fcmToken,
         }),
@@ -182,7 +182,7 @@ await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
         Uri.parse(endpoint),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "phone": widget.phone,
+          "email": widget.email,
         }),
       );
 
@@ -295,7 +295,7 @@ await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "OTP sent to ${widget.phone}",
+                  "OTP sent to ${widget.email}",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,

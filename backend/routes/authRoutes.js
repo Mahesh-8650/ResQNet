@@ -4,7 +4,8 @@ dotenv.config();
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import twilio from "twilio";
+import nodemailer from "nodemailer";
+//import twilio from "twilio";
 
 import User from "../models/User.js";
 import Hospital from "../models/Hospital.js";
@@ -17,12 +18,22 @@ import Admin from "../models/Admin.js";
 import mongoose from "mongoose";
 import CitizenEmergency from "../models/CitizenEmergency.js";
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
 const router = express.Router();
 
-const twilioClient = twilio(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+// const twilioClient = twilio(
+//   process.env.TWILIO_SID,
+//   process.env.TWILIO_AUTH_TOKEN
+// );
 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
@@ -89,10 +100,10 @@ router.post("/register/user", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    await Otp.deleteMany({ phone });
+    await Otp.deleteMany({ email });
 
     await Otp.create({
-      phone,
+      email,
       otp: hashedOtp,
       expiresAt: new Date(Date.now() + 2 * 60 * 1000),
       registrationData: {
@@ -106,11 +117,12 @@ router.post("/register/user", async (req, res) => {
       },
     });
 
-    await twilioClient.messages.create({
-      body: `Your ResQNet verification OTP is ${otp}`,
-      from: process.env.TWILIO_PHONE,
-      to: phone,
-    });
+    await transporter.sendMail({
+  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "ResQNet Verification OTP",
+  text: `Your ResQNet verification OTP is ${otp}`
+});
 
     return res.status(200).json({
       message: "OTP sent for verification.",
@@ -211,12 +223,12 @@ router.post(
         },
       });
 
-      await twilioClient.messages.create({
-        body: `Your ResQNet hospital verification OTP is ${otp}`,
-        from: process.env.TWILIO_PHONE,
-        to: phone,
-      });
-
+      await transporter.sendMail({
+  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "ResQNet Hospital Verification OTP",
+  text: `Your ResQNet hospital verification OTP is ${otp}`
+});
       return res.status(200).json({
         message: "OTP sent for verification.",
       });
@@ -324,12 +336,12 @@ router.post(
         },
       });
 
-      await twilioClient.messages.create({
-        body: `Your ResQNet ambulance verification OTP is ${otp}`,
-        from: process.env.TWILIO_PHONE,
-        to: phone,
-      });
-
+      await transporter.sendMail({
+  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "ResQNet Ambulance Verification OTP",
+  text: `Your ResQNet ambulance verification OTP is ${otp}`
+});
       return res.status(200).json({
         message: "OTP sent for ambulance verification.",
       });
@@ -347,16 +359,16 @@ router.post(
 
 router.post("/send-otp", async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { email } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({ message: "Phone required" });
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
     }
 
     const user =
-      (await User.findOne({ phone })) ||
-      (await Hospital.findOne({ phone })) ||
-      (await Ambulance.findOne({ phone }));
+  (await User.findOne({ email })) ||
+  (await Hospital.findOne({ email })) ||
+  (await Ambulance.findOne({ email }));
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -382,11 +394,12 @@ router.post("/send-otp", async (req, res) => {
       expiresAt: new Date(Date.now() + 2 * 60 * 1000),
     });
 
-    await twilioClient.messages.create({
-      body: `Your ResQNet login OTP is ${otp}`,
-      from: process.env.TWILIO_PHONE,
-      to: phone,
-    });
+    await transporter.sendMail({
+  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "ResQNet Login OTP",
+  text: `Your ResQNet login OTP is ${otp}`
+});
 
     return res.status(200).json({
       message: "Login OTP sent successfully",
@@ -404,14 +417,14 @@ router.post("/send-otp", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { phone, otp, fcmToken } = req.body;
+    const { email, otp, fcmToken } = req.body;
 
-    const record = await Otp.findOne({ phone });
+    const record = await Otp.findOne({ email });
 
     if (!record) return res.status(400).json({ message: "OTP expired" });
 
     if (record.expiresAt < new Date()) {
-      await Otp.deleteOne({ phone });
+      await Otp.deleteOne({ email });
       return res.status(400).json({ message: "OTP expired" });
     }
 
@@ -420,17 +433,17 @@ router.post("/verify-otp", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid OTP" });
 
-    await Otp.deleteOne({ phone });
+    await Otp.deleteOne({ email });
 
     let account =
-      (await User.findOne({ phone })) ||
-      (await Hospital.findOne({ phone })) ||
-      (await Ambulance.findOne({ phone }));
+      (await User.findOne({ email })) ||
+      (await Hospital.findOne({ email })) ||
+      (await Ambulance.findOne({ email }));
 
     if (!account && record.registrationData?.type === "citizen") {
       account = await User.create({
         ...record.registrationData,
-        phone,
+        email,
         role: "citizen",
         status: "approved",
       });

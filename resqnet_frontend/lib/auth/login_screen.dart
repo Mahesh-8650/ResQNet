@@ -13,18 +13,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   Country _selectedCountry = Country.parse('IN');
   bool _isLoading = false;
 
   Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
 
-    if (phone.length < 6) {
-      _showDialog("Invalid Number", "Enter valid mobile number.");
-      return;
-    }
+if (email.isEmpty || !email.contains("@")) {
+  _showDialog("Invalid Email", "Enter a valid email address.");
+  return;
+}
 
     final fullPhone = "+${_selectedCountry.phoneCode}$phone";
 
@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Uri.parse("https://resqnet-backend-1xe3.onrender.com/api/auth/send-otp"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "phone": fullPhone,
+          "email": email,
         }),
       );
 
@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => OtpScreen(
-              phone: fullPhone,
+              email: email,
               isRegisterFlow: false,
             ),
           ),
@@ -170,10 +170,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     Expanded(
                       child: TextField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
+                        controller: _emailController,
+keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          hintText: "Enter mobile number",
+                          hintText: "Enter email address",
                         ),
                       ),
                     ),
