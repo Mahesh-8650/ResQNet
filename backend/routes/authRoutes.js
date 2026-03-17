@@ -4,7 +4,7 @@ dotenv.config();
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Resend } from "resend";
+import SibApiV3Sdk from "sib-api-v3-sdk";
 //import twilio from "twilio";
 
 import User from "../models/User.js";
@@ -18,7 +18,12 @@ import Admin from "../models/Admin.js";
 import mongoose from "mongoose";
 import CitizenEmergency from "../models/CitizenEmergency.js";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+const emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const router = express.Router();
 
@@ -110,11 +115,11 @@ router.post("/register/user", async (req, res) => {
       },
     });
 
-await resend.emails.send({
-  from: "ResQNet <onboarding@resend.dev>",
-  to: email,
+await emailApi.sendTransacEmail({
+  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  to: [{ email: email }],
   subject: "ResQNet Verification OTP",
-  text: `Your ResQNet verification OTP is ${otp}`
+  textContent: `Your ResQNet verification OTP is ${otp}`
 });
 
     return res.status(200).json({
@@ -217,11 +222,11 @@ router.post(
         },
       });
 
-     await resend.emails.send({
-  from: "ResQNet <onboarding@resend.dev>",
-  to: email,
+   await emailApi.sendTransacEmail({
+  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  to: [{ email: email }],
   subject: "ResQNet Hospital Verification OTP",
-  text: `Your ResQNet hospital verification OTP is ${otp}`
+  textContent: `Your ResQNet hospital verification OTP is ${otp}`
 });
       return res.status(200).json({
         message: "OTP sent for verification.",
@@ -331,11 +336,11 @@ router.post(
         },
       });
 
-    await resend.emails.send({
-  from: "ResQNet <onboarding@resend.dev>",
-  to: email,
+    await emailApi.sendTransacEmail({
+  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  to: [{ email: email }],
   subject: "ResQNet Ambulance Verification OTP",
-  text: `Your ResQNet ambulance verification OTP is ${otp}`
+  textContent: `Your ResQNet ambulance verification OTP is ${otp}`
 });
       return res.status(200).json({
         message: "OTP sent for ambulance verification.",
@@ -389,11 +394,11 @@ router.post("/send-otp", async (req, res) => {
       expiresAt: new Date(Date.now() + 2 * 60 * 1000),
     });
 
-  await resend.emails.send({
-  from: "ResQNet <onboarding@resend.dev>",
-  to: email,
+await emailApi.sendTransacEmail({
+  sender: { email: "resqnetotp@gmail.com", name: "ResQNet" },
+  to: [{ email: email }],
   subject: "ResQNet Login OTP",
-  text: `Your ResQNet login OTP is ${otp}`
+  textContent: `Your ResQNet login OTP is ${otp}`
 });
 
     return res.status(200).json({

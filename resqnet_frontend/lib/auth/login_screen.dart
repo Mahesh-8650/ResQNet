@@ -26,7 +26,7 @@ if (email.isEmpty || !email.contains("@")) {
   return;
 }
 
-    final fullPhone = "+${_selectedCountry.phoneCode}$phone";
+   // final fullPhone = "+${_selectedCountry.phoneCode}$phone";
 
     setState(() => _isLoading = true);
 
@@ -95,11 +95,11 @@ if (email.isEmpty || !email.contains("@")) {
     );
   }
 
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    super.dispose();
-  }
+ @override
+void dispose() {
+  _emailController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +132,7 @@ if (email.isEmpty || !email.contains("@")) {
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "Mobile Number",
+                    "Email Address",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

@@ -171,7 +171,7 @@ class _HospitalRegisterScreenState
           context,
           MaterialPageRoute(
             builder: (_) => OtpScreen(
-              phone: fullPhone,
+              email: _email.text.trim(),
               isRegisterFlow: true,
             ),
           ),

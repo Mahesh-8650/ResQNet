@@ -131,7 +131,7 @@ class _RegisterAmbulanceScreenState
           context,
           MaterialPageRoute(
             builder: (_) => OtpScreen(
-              phone: fullPhone,
+              email: _email.text.trim(),
               isRegisterFlow: true,
             ),
           ),
