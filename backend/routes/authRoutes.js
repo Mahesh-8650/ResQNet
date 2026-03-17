@@ -4,7 +4,7 @@ dotenv.config();
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 //import twilio from "twilio";
 
 import User from "../models/User.js";
@@ -18,18 +18,7 @@ import Admin from "../models/Admin.js";
 import mongoose from "mongoose";
 import CitizenEmergency from "../models/CitizenEmergency.js";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const router = express.Router();
 
@@ -120,14 +109,12 @@ router.post("/register/user", async (req, res) => {
       },
     });
 
-  transporter.sendMail({
-  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+await resend.emails.send({
+  from: "ResQNet <onboarding@resend.dev>",
   to: email,
   subject: "ResQNet Verification OTP",
   text: `Your ResQNet verification OTP is ${otp}`
-})
-.then(() => console.log("OTP email sent"))
-.catch(err => console.log("Email error:", err));
+});
 
     return res.status(200).json({
       message: "OTP sent for verification.",
@@ -228,8 +215,8 @@ router.post(
         },
       });
 
-      await transporter.sendMail({
-  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+     await resend.emails.send({
+  from: "ResQNet <onboarding@resend.dev>",
   to: email,
   subject: "ResQNet Hospital Verification OTP",
   text: `Your ResQNet hospital verification OTP is ${otp}`
@@ -341,8 +328,8 @@ router.post(
         },
       });
 
-      await transporter.sendMail({
-  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+  from: "ResQNet <onboarding@resend.dev>",
   to: email,
   subject: "ResQNet Ambulance Verification OTP",
   text: `Your ResQNet ambulance verification OTP is ${otp}`
@@ -399,8 +386,8 @@ router.post("/send-otp", async (req, res) => {
       expiresAt: new Date(Date.now() + 2 * 60 * 1000),
     });
 
-    await transporter.sendMail({
-  from: `"ResQNet" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+  from: "ResQNet <onboarding@resend.dev>",
   to: email,
   subject: "ResQNet Login OTP",
   text: `Your ResQNet login OTP is ${otp}`
