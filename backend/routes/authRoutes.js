@@ -19,9 +19,9 @@ import mongoose from "mongoose";
 import CitizenEmergency from "../models/CitizenEmergency.js";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  service: "gmail",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -117,12 +117,14 @@ router.post("/register/user", async (req, res) => {
       },
     });
 
-    await transporter.sendMail({
+  transporter.sendMail({
   from: `"ResQNet" <${process.env.EMAIL_USER}>`,
   to: email,
   subject: "ResQNet Verification OTP",
   text: `Your ResQNet verification OTP is ${otp}`
-});
+})
+.then(() => console.log("OTP email sent"))
+.catch(err => console.log("Email error:", err));
 
     return res.status(200).json({
       message: "OTP sent for verification.",
