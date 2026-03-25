@@ -175,10 +175,11 @@ setTimeout(async () => {
 router.get("/ambulance/:ambulanceId", async (req, res) => {
   try {
     const { ambulanceId } = req.params;
+    const objectId = new mongoose.Types.ObjectId(ambulanceId);
 
     const emergency = await CitizenEmergency.findOne({
-      ambulanceId,
-      status: { $in: ["offered", "assigned"] },
+      ambulanceId: objectId,
+      status: { $ne: "completed" },
     })
       .populate(
         "hospitalId",
