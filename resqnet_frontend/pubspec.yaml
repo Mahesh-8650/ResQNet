@@ -36,6 +36,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/ambulance.png
+    - assets/images/hospital_bg.png
     
 flutter_launcher_icons:
   android: true

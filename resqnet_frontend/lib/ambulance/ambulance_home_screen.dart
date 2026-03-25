@@ -9,599 +9,881 @@ import 'ambulance_settings_page.dart';
 import 'ambulance_performance_page.dart';
 
 class AmbulanceHomeScreen extends StatefulWidget {
-  final String ambulanceId;
-  final String ambulanceName;
-  final String vehicleNumber;
-  final bool isAvailable;
-  final bool isBusy;
+final String ambulanceId;
+final String ambulanceName;
+final String vehicleNumber;
+final bool isAvailable;
+final bool isBusy;
 
-  const AmbulanceHomeScreen({
-    super.key,
-    required this.ambulanceId,
-    required this.ambulanceName,
-    required this.vehicleNumber,
-    required this.isAvailable,
-    required this.isBusy,
-  });
+const AmbulanceHomeScreen({
+super.key,
+required this.ambulanceId,
+required this.ambulanceName,
+required this.vehicleNumber,
+required this.isAvailable,
+required this.isBusy,
+});
 
-  @override
-  State<AmbulanceHomeScreen> createState() =>
-      _AmbulanceHomeScreenState();
+@override
+State<AmbulanceHomeScreen> createState() =>
+_AmbulanceHomeScreenState();
 }
 
 class _AmbulanceHomeScreenState
-    extends State<AmbulanceHomeScreen> {
+extends State<AmbulanceHomeScreen> {
 
-  late bool isAvailable;
-  late bool isBusy;
-  bool isGpsActive = true;
+late bool isAvailable;
+late bool isBusy;
+bool isGpsActive = true;
+bool isLocationDialogOpen = false;
+DateTime? lastDialogTime;
+bool isUpdatingDuty = false;
 
-  Map<String, dynamic>? activeEmergency;
-  bool _isOfferDialogShowing = false;
+int _selectedIndex = 2;
 
-  final String baseUrl =
-      "https://resqnet-backend-1xe3.onrender.com";
+Map<String, dynamic>? activeEmergency;
+bool _isOfferDialogShowing = false;
+bool isAccepting = false;
 
-  Timer? _refreshTimer;
-  Timer? _gpsMonitorTimer;
-  Timer? _timeUpdateTimer;
-  StreamSubscription<Position>? _positionStream;
+final String baseUrl =
+"https://resqnet-backend-1xe3.onrender.com";
 
-  @override
-  void initState() {
-    super.initState();
+Timer? _refreshTimer;
+Timer? _gpsMonitorTimer;
+Timer? _timeUpdateTimer;
+StreamSubscription<Position>? _positionStream;
 
-    isAvailable = widget.isAvailable;
-    isBusy = widget.isBusy;
+void _showGpsDialog() {
+  if (isLocationDialogOpen) return;
 
-    _startAutoRefresh();
+  isLocationDialogOpen = true;
 
-    if (isAvailable) {
-      _startTracking();
-    }
-  }
-
-  /* ================= STATUS ================= */
-
-  String get statusText {
-    if (isBusy) return "BUSY";
-    if (isAvailable) return "ON DUTY";
-    return "OFF DUTY";
-  }
-
-  Color get statusColor {
-    if (isBusy) return Colors.orange;
-    if (isAvailable) return Colors.green;
-    return Colors.red;
-  }
-
-  /* ================= AUTO REFRESH ================= */
-
-  void _startAutoRefresh() {
-    _refreshTimer =
-        Timer.periodic(const Duration(seconds: 3), (_) {
-      _fetchAmbulanceStatus();
-      _checkForAssignedEmergency();
-    });
-  }
-
-  /* ================= FETCH STATUS ================= */
-
-  Future<void> _fetchAmbulanceStatus() async {
-    try {
-      final response = await http.get(
-        Uri.parse("$baseUrl/api/auth/ambulance/${widget.ambulanceId}"),
-      );
-
-      if (response.statusCode != 200) return;
-
-      final data = jsonDecode(response.body);
-
-      if (!mounted) return;
-
-      setState(() {
-        isAvailable = data["isAvailable"] ?? isAvailable;
-        isBusy = data["isBusy"] ?? isBusy;
-      });
-
-    } catch (_) {}
-  }
-
-  /* ================= DUTY UPDATE ================= */
-
-  Future<void> _updateDuty(bool value) async {
-
-    if (isBusy && value == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "You have an active patient. Complete the case first.",
-          ),
-        ),
-      );
-      return;
-    }
-
-    // 🔥 Update immediately
-    setState(() {
-      isAvailable = value;
-    });
-
-    try {
-      await http.put(
-        Uri.parse("$baseUrl/api/auth/update-duty/${widget.ambulanceId}"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"isAvailable": value}),
-      );
-
-      if (value) {
-        _startTracking();
-      } else {
-        _stopTracking();
-      }
-
-    } catch (_) {
-      // rollback if failed
-      setState(() {
-        isAvailable = !value;
-      });
-    }
-  }
-
-  /* ================= TRACKING ================= */
-
-  Future<void> _startTracking() async {
-    await _startLocationStream();
-    _startGpsMonitor();
-    _startTimeBasedUpdates();
-  }
-
-  void _stopTracking() {
-    _positionStream?.cancel();
-    _gpsMonitorTimer?.cancel();
-    _timeUpdateTimer?.cancel();
-  }
-
-  Future<void> _startLocationStream() async {
-    LocationPermission permission =
-        await Geolocator.requestPermission();
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      await Geolocator.openAppSettings();
-      return;
-    }
-
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 1,
-    );
-
-    _positionStream?.cancel();
-
-    _positionStream =
-        Geolocator.getPositionStream(
-                locationSettings: locationSettings)
-            .listen((position) {
-      if (isGpsActive) {
-        _sendLocationToBackend(
-            position.latitude,
-            position.longitude);
-      }
-    });
-  }
-
-  void _startTimeBasedUpdates() {
-    _timeUpdateTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) async {
-      if (!isAvailable || !isGpsActive) return;
-
-      try {
-        Position position =
-            await Geolocator.getCurrentPosition(
-          desiredAccuracy:
-              LocationAccuracy.bestForNavigation,
-        );
-
-        _sendLocationToBackend(
-            position.latitude,
-            position.longitude);
-      } catch (_) {}
-    });
-  }
-
-  void _startGpsMonitor() {
-    _gpsMonitorTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) async {
-      bool enabled =
-          await Geolocator.isLocationServiceEnabled();
-
-      if (!mounted) return;
-
-      setState(() {
-        isGpsActive = enabled;
-      });
-    });
-  }
-
-  /* ================= EMERGENCY CHECK ================= */
-
-  Future<void> _checkForAssignedEmergency() async {
-
-    try {
-      final response = await http.get(
-        Uri.parse(
-          "$baseUrl/api/citizen-emergency/ambulance/${widget.ambulanceId}",
-        ),
-      );
-
-      if (response.statusCode != 200) return;
-
-      final data = jsonDecode(response.body);
-
-      if (!data["hasEmergency"]) {
-
-  // 🔥 If dialog is open, close it
-  if (_isOfferDialogShowing) {
-    Navigator.of(context, rootNavigator: true).pop();
-    _isOfferDialogShowing = false;
-  }
-
-  if (activeEmergency != null) {
-    setState(() {
-      activeEmergency = null;
-      isBusy = false;
-    });
-  }
-
-  return;
-}
-
-      final emergency = data["emergency"];
-      final status = emergency["status"];
-
-      // OFFER
-      if (status == "offered" &&
-          !_isOfferDialogShowing) {
-        _isOfferDialogShowing = true;
-        _showOfferDialog(emergency);
-        return;
-      }
-
-      // ASSIGNED
-      if (status == "assigned") {
-        if (activeEmergency == null ||
-            activeEmergency!["_id"] != emergency["_id"]) {
-          setState(() {
-            activeEmergency = emergency;
-            isBusy = true;
-            isAvailable=true;
-          });
-        }
-      }
-
-    } catch (_) {}
-  }
-
-  /* ================= OFFER DIALOG ================= */
-
- void _showOfferDialog(Map<String, dynamic> emergency) {
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: const Text("🚑 New Emergency"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    builder: (_) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
         children: [
-          Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
-          const SizedBox(height: 6),
-          Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
+
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+                const Text(
+                  "Enable Location",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  "Location must be ON while you are on duty.",
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    isLocationDialogOpen = false;
+
+                    await Geolocator.openLocationSettings();
+                  },
+                  child: const Text("Turn ON"),
+                ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            right: 8,
+            top: 8,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                isLocationDialogOpen = false;
+              },
+              child: const Icon(Icons.close),
+            ),
+          ),
         ],
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _respondToEmergency(emergency["_id"]);
-          },
-          child: const Text("Accept"),
-        ),
-      ],
     ),
-  ).then((_) {
-    _isOfferDialogShowing = false;
+  );
+}
+@override
+void initState() {
+  super.initState();
+
+  isAvailable = widget.isAvailable;
+  isBusy = widget.isBusy;
+
+  _startAutoRefresh();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await _fetchAmbulanceStatus();
+
+    bool enabled = await Geolocator.isLocationServiceEnabled();
+
+    if (isAvailable && !enabled) {
+      _showGpsDialog();
+    }
+
+    if (isAvailable) {
+      await _startTracking();
+    }
   });
 }
 
-  Future<void> _respondToEmergency(String id) async {
-  try {
-    final response = await http.put(
-      Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "ambulanceId": widget.ambulanceId
-      }),
-    );
+/* ================= STATUS ================= */
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      setState(() {
-        isBusy = true;
-        isAvailable = true;   // Stay ON DUTY
-        activeEmergency = data["emergency"];
-      });
-
-      _isOfferDialogShowing = false; // 🔥 Prevent repeat
-    }
-  } catch (e) {
-    print("Respond error: $e");
-  }
+String get statusText {
+if (isBusy) return "BUSY";
+if (isAvailable) return "ON DUTY";
+return "OFF DUTY";
 }
 
-  /* ================= LOCATION SEND ================= */
+Color get statusColor {
+if (isBusy) return Colors.orange;
+if (isAvailable) return Colors.green;
+return Colors.red;
+}
 
-  Future<void> _sendLocationToBackend(
-      double lat, double lng) async {
-    try {
-      await http.put(
-        Uri.parse(
-            "$baseUrl/api/auth/update-location/${widget.ambulanceId}"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "latitude": lat,
-          "longitude": lng,
-        }),
-      );
-    } catch (_) {}
+/* ================= AUTO REFRESH ================= */
+
+void _startAutoRefresh() {
+_refreshTimer =
+Timer.periodic(const Duration(seconds: 3), (timer) {
+if (!isAccepting) {
+  _fetchAmbulanceStatus();
+  _checkForAssignedEmergency();
+}
+});
+}
+
+/* ================= FETCH STATUS ================= */
+
+Future<void> _fetchAmbulanceStatus() async {
+
+if (isUpdatingDuty) return;
+
+try {
+final response = await http.get(
+Uri.parse("$baseUrl/api/auth/ambulance/${widget.ambulanceId}"),
+);
+
+if (response.statusCode != 200) return;  
+
+  final data = jsonDecode(response.body);  
+
+  if (!mounted) return;  
+
+  setState(() {  
+    isAvailable = data["isAvailable"] ?? isAvailable;  
+    isBusy = data["isBusy"] ?? isBusy;  
+  });  
+
+} catch (_) {}
+
+}
+
+/* ================= DUTY UPDATE ================= */
+Future<void> _updateDuty(bool value) async {
+
+  if (isBusy && value == false) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "You have an active patient. Complete the case first.",
+        ),
+      ),
+    );
+    return;
   }
 
-  /* ================= ACTIVE CASE ================= */
+  isUpdatingDuty = true;
 
-  Future<void> _openActiveCase() async {
+  setState(() {
+    isAvailable = value;
+  });
 
-    await _checkForAssignedEmergency();
+  try {
+    await http.put(
+      Uri.parse("$baseUrl/api/auth/update-duty/${widget.ambulanceId}"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"isAvailable": value}),
+    );
 
-    if (activeEmergency == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No active emergency."),
-        ),
-      );
-      return;
+    if (value) {
+      await _startTracking();
+    } else {
+      _stopTracking();
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ActiveCaseScreen(
-          emergencyId: activeEmergency!["_id"],
-          emergencyData: activeEmergency!,
-          ambulanceId: widget.ambulanceId,
-        ),
-      ),
-    );
+  } catch (_) {
+    setState(() {
+      isAvailable = !value;
+    });
   }
 
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    _stopTracking();
-    super.dispose();
-  }
+  Future.delayed(const Duration(seconds: 2), () {
+    isUpdatingDuty = false;
+  });
+}
 
-  /* ================= UI ================= */
+/* ================= TRACKING ================= */
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFD32F2F),
-        centerTitle: true,
-        title: const Text(
-          "Ambulance Dashboard",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+Future<void> _startTracking() async {
+  bool enabled = await Geolocator.isLocationServiceEnabled();
 
-            _buildWelcomeCard(),
-            const SizedBox(height: 25),
+  _startGpsMonitor(); // always start monitor
 
-            const Text("Duty Control",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            _buildDutyCard(),
+  if (!enabled) return; // ❌ DO NOT start location stream
 
-            const SizedBox(height: 25),
+  await _startLocationStream();
+  _startTimeBasedUpdates();
+}
 
-            const Text("Quick Actions",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 15),
+void _stopTracking() {
+_positionStream?.cancel();
+_gpsMonitorTimer?.cancel();
+_timeUpdateTimer?.cancel();
+}
 
-            _buildQuickActions(),
-          ],
-        ),
-      ),
-    );
-  }
+Future<void> _startLocationStream() async {
+LocationPermission permission =
+    await Geolocator.checkPermission();
 
-  Widget _buildWelcomeCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Welcome, ${widget.ambulanceName}",
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Text("Vehicle: ${widget.vehicleNumber}",
-              style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 15),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(statusText,
-                style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
+if (permission == LocationPermission.denied ||
+    permission == LocationPermission.deniedForever) {
+  return; // ❌ do nothing (NO popup)
+}
+const locationSettings = LocationSettings(  
+  accuracy: LocationAccuracy.bestForNavigation,  
+  distanceFilter: 1,  
+);  
 
-  Widget _buildDutyCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
-        children: [
-          Text(isAvailable ? "ON DUTY" : "OFF DUTY",
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isAvailable
-                      ? Colors.green
-                      : Colors.red)),
-          Switch(
-            value: isAvailable,
-            activeColor: Colors.green,
-            onChanged: _updateDuty,
-          ),
-        ],
-      ),
-    );
-  }
+_positionStream?.cancel();  
 
-  Widget _buildQuickActions() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      crossAxisSpacing: 15,
-      mainAxisSpacing: 15,
-      physics:
-          const NeverScrollableScrollPhysics(),
-      children: [
-        _actionCard(
-  Icons.history,
-  "Case History",
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CaseHistoryPage(
-          ambulanceId: widget.ambulanceId,
-        ),
-      ),
-    );
-  },
+_positionStream =  
+    Geolocator.getPositionStream(  
+            locationSettings: locationSettings)  
+        .listen((position) {  
+  if (isGpsActive) {  
+    sendLocationToBackend(  
+        position.latitude,  
+        position.longitude);  
+  }  
+});
+
+}
+
+void _startTimeBasedUpdates() {
+_timeUpdateTimer =
+Timer.periodic(const Duration(seconds: 5), (timer) async {
+if (!isAvailable || !isGpsActive) return;
+
+try {  
+Position? position = await Geolocator.getLastKnownPosition();
+
+if (position != null) {
+  sendLocationToBackend(position.latitude, position.longitude);
+}   
+  } catch (_) {}  
+});
+
+}
+
+void _startGpsMonitor() {
+  _gpsMonitorTimer =
+      Timer.periodic(const Duration(seconds: 3), (_) async {
+
+    if (!mounted) return;
+
+    bool enabled = await Geolocator.isLocationServiceEnabled();
+
+    // ❌ GPS OFF → show your dialog
+    if (!enabled && isAvailable) {
+      _showGpsDialog();
+    }
+
+    // ✅ GPS ON → close dialog + start tracking if not started
+    if (enabled) {
+
+      if (isLocationDialogOpen) {
+        Navigator.of(context, rootNavigator: true).pop();
+        isLocationDialogOpen = false;
+      }
+
+      // 🔥 AUTO START TRACKING (important)
+      if (isAvailable && _positionStream == null) {
+        await _startLocationStream();
+        _startTimeBasedUpdates();
+      }
+    }
+
+    setState(() {
+      isGpsActive = enabled;
+    });
+  });
+}
+/* ================= EMERGENCY CHECK ================= */
+
+/* ================= EMERGENCY CHECK ================= */
+
+Future<void> _checkForAssignedEmergency() async {
+try {
+final response = await http.get(
+Uri.parse(
+"$baseUrl/api/citizen-emergency/ambulance/${widget.ambulanceId}",
 ),
-        _actionCard(Icons.local_hospital, "Active Case",
-            onTap: _openActiveCase),
-        _actionCard(
-  Icons.bar_chart,
-  "Performance",
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AmbulancePerformancePage(
-          ambulanceId: widget.ambulanceId,
-        ),
-      ),
-    );
-  },
-),
-        _actionCard(
-  Icons.settings,
-  "Settings",
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AmbulanceSettingsPage(
-          ambulanceId: widget.ambulanceId,
-        ),
-      ),
-    );
-  },
-),
-      ],
-    );
-  }
+);
 
-  Widget _actionCard(
-      IconData icon,
-      String title,
-      {VoidCallback? onTap}) {
-    return Container(
-      decoration: _cardDecoration(),
-      child: InkWell(
-        borderRadius:
-            BorderRadius.circular(16),
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD32F2F)
-                    .withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon,
-                  size: 26,
-                  color: const Color(0xFFD32F2F)),
-            ),
-            const SizedBox(height: 12),
-            Text(title,
-                style: const TextStyle(
-                    fontWeight:
-                        FontWeight.w500)),
-          ],
-        ),
-      ),
-    );
-  }
+if (response.statusCode != 200) return;  
 
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius:
-          BorderRadius.circular(18),
-      boxShadow: [
-        BoxShadow(
-          color:
-              Colors.black.withOpacity(0.04),
-          blurRadius: 12,
-          offset:
-              const Offset(0, 6),
-        )
-      ],
-    );
-  }
+final data = jsonDecode(response.body);  
+
+if (!data["hasEmergency"]) {  
+
+  // Close dialog if open  
+  if (_isOfferDialogShowing) {  
+    Navigator.of(context, rootNavigator: true).pop();  
+    _isOfferDialogShowing = false;  
+  }  
+
+  if (activeEmergency != null) {  
+    setState(() {  
+      activeEmergency = null;  
+      isBusy = false;  
+    });  
+  }  
+
+  return;  
+}  
+
+final emergency = data["emergency"];  
+final status = emergency["status"];  
+
+// OFFER  
+if (status == "offered") {
+
+  if (_isOfferDialogShowing || isAccepting) return;
+
+  _isOfferDialogShowing = true;
+
+  showOfferDialog(emergency);
+
+  return;
+}
+// ASSIGNED  
+if (status == "assigned") {  
+  if (activeEmergency == null ||  
+      activeEmergency!["_id"] != emergency["_id"]) {  
+
+    setState(() {  
+      activeEmergency = emergency;  
+      isBusy = true;  
+      isAvailable = true;  
+    });  
+  }  
+}
+
+} catch (_) {}
+}
+
+/* ================= OFFER DIALOG ================= */
+
+void showOfferDialog(Map<String, dynamic> emergency) {
+showDialog(
+context: context,
+barrierDismissible: false,
+builder: (context) => AlertDialog(
+title: const Text("🚑 New Emergency"),
+content: Column(
+mainAxisSize: MainAxisSize.min,
+crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+Text("Patient: ${emergency["patientName"] ?? "Unknown"}"),
+const SizedBox(height: 6),
+Text("Type: ${emergency["emergencyType"] ?? "Unknown"}"),
+],
+),
+actions: [
+ElevatedButton(
+onPressed: () {
+  _respondToEmergency(emergency["_id"]);
+Navigator.of(context, rootNavigator: true).pop();
+},
+child: const Text("Accept"),
+),
+],
+),
+).then((_) {
+_isOfferDialogShowing = false;
+});
+}
+
+Future<void> _respondToEmergency(String id) async {
+
+  if (isAccepting) return;
+  isAccepting = true;
+  try {
+final response = await http.put(
+Uri.parse("$baseUrl/api/citizen-emergency/respond/$id"),
+headers: {"Content-Type": "application/json"},
+body: jsonEncode({
+"ambulanceId": widget.ambulanceId
+}),
+);
+
+if (response.statusCode == 200) {  
+  final data = jsonDecode(response.body);  
+
+  setState(() {  
+    isBusy = true;  
+    isAvailable = true;   // Stay ON DUTY  
+    activeEmergency = data["emergency"];  
+  });  
+
+  _isOfferDialogShowing = false; // 🔥 Prevent repeat  
+}
+
+} catch (e) {
+print("Respond error: $e");
+}
+isAccepting = false;
+}
+
+/* ================= LOCATION SEND ================= */
+
+Future<void> sendLocationToBackend(
+double lat, double lng) async {
+try {
+await http.put(
+Uri.parse(
+"$baseUrl/api/auth/update-location/${widget.ambulanceId}"),
+headers: {"Content-Type": "application/json"},
+body: jsonEncode({
+"latitude": lat,
+"longitude": lng,
+}),
+);
+} catch (e) {}
+}
+
+/* ================= ACTIVE CASE ================= */
+
+Future<void> _openActiveCase() async {
+
+
+if (activeEmergency == null) {  
+  ScaffoldMessenger.of(context).showSnackBar(  
+    const SnackBar(  
+      content: Text("No active emergency."),  
+    ),  
+  );  
+  return;  
+}  
+
+Navigator.push(  
+  context,  
+  MaterialPageRoute(  
+    builder: (_) => ActiveCaseScreen(  
+      emergencyId: activeEmergency!["_id"],  
+      emergencyData: activeEmergency!,  
+      ambulanceId: widget.ambulanceId,  
+    ),  
+  ),  
+);
+
+}
+
+@override
+void dispose() {
+_refreshTimer?.cancel();
+_stopTracking();
+super.dispose();
+}
+
+Widget _buildHomePage() {
+return Container(
+width: double.infinity,
+decoration: const BoxDecoration(
+gradient: LinearGradient(
+colors: [
+Color(0xFFD9F3F1),
+Color(0xFF77C7C9),
+],
+begin: Alignment.topCenter,
+end: Alignment.bottomCenter,
+),
+),
+child: SafeArea(
+child: SingleChildScrollView(
+child: Column(
+children: [
+
+const SizedBox(height: 30),  
+
+        /// HEADER  
+        Padding(  
+          padding: const EdgeInsets.symmetric(horizontal: 20),  
+          child: Column(  
+            crossAxisAlignment: CrossAxisAlignment.start,  
+            children: [  
+
+              const Text(  
+                "Ambulance Dashboard 🚑",  
+                style: TextStyle(  
+                  fontSize: 20,  
+                  fontWeight: FontWeight.bold,  
+                ),  
+              ),  
+
+              const SizedBox(height: 4),  
+
+              Row(  
+                children: [  
+                  const Icon(Icons.local_shipping, size: 16),  
+                  const SizedBox(width: 4),  
+                  Text("Vehicle ID: ${widget.vehicleNumber}"),  
+                ],  
+              ),  
+            ],  
+          ),  
+        ),  
+
+        const SizedBox(height: 15),  
+
+        /// DUTY CONTROL  
+        Container(  
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),  
+          padding: const EdgeInsets.all(14),  
+          decoration: _cardDecoration(),  
+          child: Row(  
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,  
+            children: [  
+
+              Text(  
+                isAvailable ? "ON DUTY" : "OFF DUTY",  
+                style: TextStyle(  
+                  fontSize: 16,  
+                  fontWeight: FontWeight.bold,  
+                  color: isAvailable ? Colors.green : Colors.red,  
+                ),  
+              ),  
+
+              Switch(  
+                value: isAvailable,  
+                activeColor: Colors.green,  
+                onChanged: _updateDuty,  
+              ),  
+            ],  
+          ),  
+        ),  
+
+        const SizedBox(height: 12),  
+
+        /// STATUS  
+        const Padding(  
+          padding: EdgeInsets.symmetric(horizontal: 20),  
+          child: Align(  
+            alignment: Alignment.centerLeft,  
+            child: Text(  
+              "Ambulance Status",  
+              style: TextStyle(  
+                fontWeight: FontWeight.bold,  
+                fontSize: 15,  
+              ),  
+            ),  
+          ),  
+        ),  
+
+        const SizedBox(height: 8),  
+
+        Container(  
+          margin: const EdgeInsets.symmetric(horizontal: 20),  
+          padding: const EdgeInsets.all(12),  
+          decoration: _cardDecoration(),  
+          child: Row(  
+            children: [  
+              Icon(Icons.check_circle, color: statusColor),  
+              const SizedBox(width: 8),  
+              Text("Status: $statusText"),  
+            ],  
+          ),  
+        ),  
+
+        const SizedBox(height: 20),  
+
+        /// CASE HISTORY  
+        _bigCard(  
+          "Case History",  
+          "Check completed emergency cases",  
+          Icons.history,  
+          Colors.orange,  
+          () {  
+            setState(() {  
+              _selectedIndex = 0;  
+            });  
+          },  
+        ),  
+
+        /// PERFORMANCE  
+        _bigCard(  
+          "Performance",  
+          "View ambulance performance",  
+          Icons.bar_chart,  
+          Colors.blue,  
+          () {  
+            setState(() {  
+              _selectedIndex = 3;  
+            });  
+          },  
+        ),  
+
+        const SizedBox(height: 12),  
+
+        /// QUICK ACTIONS  
+        const Padding(  
+          padding: EdgeInsets.symmetric(horizontal: 20),  
+          child: Align(  
+            alignment: Alignment.centerLeft,  
+            child: Text(  
+              "Quick Actions",  
+              style: TextStyle(  
+                fontWeight: FontWeight.bold,  
+                fontSize: 15,  
+              ),  
+            ),  
+          ),  
+        ),  
+
+        const SizedBox(height: 10),  
+
+        Row(  
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,  
+          children: [  
+
+            _smallCard(  
+              Icons.local_hospital,  
+              "Active Case",  
+              "Open current emergency case",  
+              Colors.red,  
+              _openActiveCase,  
+            ),  
+
+            _smallCard(  
+              Icons.settings,  
+              "Settings",  
+              "Manage app preferences",  
+              Colors.blueGrey,  
+              () {  
+                setState(() {  
+                  _selectedIndex = 4;  
+                });  
+              },  
+            ),  
+          ],  
+        ),  
+
+        const SizedBox(height: 30),  
+
+      ],  
+    ),  
+  ),  
+),
+
+);
+}
+/* ================= UI ================= */
+
+@override
+Widget build(BuildContext context) {
+
+return Scaffold(
+backgroundColor: const Color(0xFF9EA6AA),
+
+body: _selectedIndex == 2  
+? _buildHomePage()  
+: _selectedIndex == 0  
+    ? CaseHistoryPage(ambulanceId: widget.ambulanceId)  
+    : _selectedIndex == 3  
+        ? AmbulancePerformancePage(  
+            ambulanceId: widget.ambulanceId,  
+          )  
+        : _selectedIndex == 4  
+            ? AmbulanceSettingsPage(  
+                ambulanceId: widget.ambulanceId,  
+              )  
+            : const SizedBox(),  
+
+bottomNavigationBar: BottomNavigationBar(  
+  type: BottomNavigationBarType.fixed,  
+  currentIndex: _selectedIndex,  
+  selectedItemColor: Colors.red,  
+  unselectedItemColor: Colors.grey,  
+  showUnselectedLabels: true,  
+
+  onTap: (index) async {  
+
+    if (index == 1) {  
+      await _openActiveCase();  
+      return;  
+    }  
+
+    setState(() {  
+      _selectedIndex = index;  
+    });  
+
+  },  
+
+  items: const [
+
+BottomNavigationBarItem(
+icon: Icon(Icons.history),
+label: "History",
+),
+
+BottomNavigationBarItem(
+icon: Icon(Icons.local_hospital),
+label: "Active",
+),
+
+BottomNavigationBarItem(
+icon: Icon(Icons.home, size: 30),
+label: "Home",
+),
+
+BottomNavigationBarItem(
+icon: Icon(Icons.bar_chart),
+label: "Performance",
+),
+
+BottomNavigationBarItem(
+icon: Icon(Icons.settings),
+label: "Settings",
+),
+
+],
+),
+);
+}
+
+Widget _bigCard(
+String title,
+String subtitle,
+IconData icon,
+Color color,
+VoidCallback onTap,
+) {
+return GestureDetector(
+onTap: onTap,
+child: Container(
+margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+padding: const EdgeInsets.all(14),
+decoration: _cardDecoration(),
+child: Row(
+children: [
+
+Expanded(  
+        child: Column(  
+          crossAxisAlignment: CrossAxisAlignment.start,  
+          children: [  
+
+            Text(  
+              title,  
+              style: const TextStyle(  
+                  fontSize: 16,  
+                  fontWeight: FontWeight.bold),  
+            ),  
+
+            const SizedBox(height: 4),  
+
+            Text(  
+              subtitle,  
+              style: const TextStyle(fontSize: 12),  
+            ),  
+
+          ],  
+        ),  
+      ),  
+
+      Icon(icon, size: 28, color: color),  
+
+    ],  
+  ),  
+),
+
+);
+}
+
+Widget _smallCard(
+IconData icon,
+String title,
+String subtitle,
+Color color,
+VoidCallback onTap,
+) {
+return GestureDetector(
+onTap: onTap,
+child: Container(
+width: 140,
+height: 120,
+padding: const EdgeInsets.all(12),
+decoration: _cardDecoration(),
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+
+Icon(icon, size: 32, color: color),  
+
+      const SizedBox(height: 8),  
+
+      Text(  
+        title,  
+        style: const TextStyle(  
+          fontWeight: FontWeight.bold,  
+        ),  
+      ),  
+
+      const SizedBox(height: 4),  
+
+      Text(  
+        subtitle,  
+        textAlign: TextAlign.center,  
+        style: const TextStyle(  
+          fontSize: 11,  
+          color: Colors.grey,  
+        ),  
+      ),  
+    ],  
+  ),  
+),
+
+);
+}
+
+BoxDecoration _cardDecoration() {
+return BoxDecoration(
+color: Colors.white,
+borderRadius: BorderRadius.circular(18),
+boxShadow: [
+BoxShadow(
+color: Colors.black.withOpacity(0.04),
+blurRadius: 12,
+offset: const Offset(0, 6),
+)
+],
+);
+}
 }

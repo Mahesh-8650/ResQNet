@@ -30,6 +30,7 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
   String hospitalAddress = "";
 
   bool isLoading = true;
+  int _selectedIndex = 1;
 
   @override
   void initState() {
@@ -123,58 +124,143 @@ Future<void> _logout() async {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
-              _buildResourceCard(),
-              const SizedBox(height: 20),
-              _buildUpdateButton(),
-              const SizedBox(height: 30),
-              _buildManagementSection(),
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      body: Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFB2DFDB),
+        Color(0xFF80CBC4),
+        Color(0xFF4DB6AC),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: _selectedIndex == 1
+    ? _buildHomePage()
+    : _selectedIndex == 0
+        ? IncomingRequestsScreen(hospitalId: widget.hospitalId)
+        : CompletedRequestsScreen(hospitalId: widget.hospitalId),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+  currentIndex: _selectedIndex,
+  selectedItemColor: Colors.red,
+  unselectedItemColor: Colors.grey,
+  onTap: (index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  },
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.notifications),
+      label: "Requests",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home),
+      label: "Home",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.check_circle),
+      label: "Completed",
+    ),
+  ],
+),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFB71C1C), Color(0xFFD32F2F)],
+  Widget _topBar() {
+  return const Padding(
+    padding: EdgeInsets.symmetric(vertical: 10), // 👈 reduced
+    child: Center(
+      child: Text(
+        "Hospital Dashboard",
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600, // 👈 better than bold
+          letterSpacing: 0.5, // 👈 premium feel
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Hospital Dashboard",
-              style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 10),
-          Text(
-            widget.hospitalName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            hospitalAddress,
-            style: const TextStyle(color: Colors.white70),
-          ),
-        ],
+    ),
+  );
+}
+
+ Widget _buildHeader() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        color: Colors.white.withOpacity(0.9),
       ),
-    );
-  }
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: Row(
+          children: [
+
+            /// TEXT
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Text(
+                      widget.hospitalName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.location_pin,
+                            color: Colors.red, size: 18),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            hospitalAddress,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /// IMAGE (FINAL FIX)
+            Expanded(
+  flex: 2,
+  child: Transform.scale(
+    scale: 1.25, // 🔥 increase until it looks perfect
+    alignment: Alignment.centerRight,
+    child: Image.asset(
+      "assets/images/hospital_bg.png",
+      fit: BoxFit.cover,
+    ),
+  ),
+),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   Widget _buildResourceCard() {
     return Padding(
@@ -183,14 +269,14 @@ Future<void> _logout() async {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            )
-          ],
+          borderRadius: BorderRadius.circular(28),
+boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.05),
+    blurRadius: 15,
+    offset: const Offset(0, 6),
+  )
+],
         ),
         child: Column(
           children: [
@@ -205,7 +291,7 @@ Future<void> _logout() async {
                         generalBeds.toString(), Colors.orange)),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -223,6 +309,8 @@ Future<void> _logout() async {
                         Colors.red)),
               ],
             ),
+            const SizedBox(height: 20),
+            _buildUpdateButton(),
           ],
         ),
       ),
@@ -230,74 +318,108 @@ Future<void> _logout() async {
   }
 
   Widget _resourceTile(
-      IconData icon, String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: color.withOpacity(0.2),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 15),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 5),
-          Text(label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13)),
-        ],
-      ),
-    );
-  }
+    IconData icon, String label, String value, Color color) {
+  return Container(
+    height: 130, // 🔥 FIXED SIZE
+    padding: const EdgeInsets.all(10), // 🔥 reduced
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: color.withOpacity(0.15),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(height: 4),
+        Text(
+  value,
+  style: const TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 20,
+  ),
+),
+
+const SizedBox(height: 4),
+
+Text(
+  label,
+  style: const TextStyle(
+    fontSize: 12,
+    color: Colors.black54,
+  ),
+),
+        const Spacer(),
+      ],
+    ),
+  );
+}
 
   Widget _buildUpdateButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD32F2F),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 30),
+    child: SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _showUpdateDialog, // ✅ functionality intact
+
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.zero, // 🔥 important for gradient
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30), // 🔥 pill shape
           ),
-          onPressed: _showUpdateDialog,
-          child: const Text("Update Resources",
-              style: TextStyle(fontSize: 16)),
+          elevation: 0, // cleaner look
+          backgroundColor: Colors.transparent, // 🔥 required
+        ),
+
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFD32F2F), Color(0xFFFF3B30)],
+            ),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: const Center(
+            child: Text(
+              "Update Resources",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildManagementSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Hospital Management",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Row(
+  children: [
+    const Text(
+      "Hospital Management",
+      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    ),
+  ],
+),
           const SizedBox(height: 15),
 
           _buildManagementTile(
             Icons.notifications,
             "Incoming Requests",
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      IncomingRequestsScreen(hospitalId: widget.hospitalId),
-                ),
-              );
+              setState(() {
+                _selectedIndex = 0;
+              });
             },
           ),
 
@@ -308,13 +430,9 @@ Future<void> _logout() async {
             "Completed Cases",
             iconColor: Colors.green, // ✅ NOW WORKS
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      CompletedRequestsScreen(hospitalId: widget.hospitalId),
-                ),
-              );
+              setState(() {
+                _selectedIndex = 2;
+              });
             },
           ),
           const SizedBox(height: 20),
@@ -338,44 +456,75 @@ SizedBox(
     );
   }
 
-  Widget _buildManagementTile(
-    IconData icon,
-    String title, {
-    Color iconColor = const Color(0xFFD32F2F),
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor), // ✅ FIXED HERE
-            const SizedBox(width: 15),
-            Expanded(
-              child: Text(title,
-                  style: const TextStyle(fontSize: 16)),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
-          ],
-        ),
+ Widget _buildManagementTile(
+  IconData icon,
+  String title, {
+  Color iconColor = const Color(0xFFD32F2F),
+  VoidCallback? onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 70, // 🔥 FIXED
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.04),
+    blurRadius: 10,
+    offset: const Offset(0, 4),
+  )
+],
       ),
-    );
-  }
+      child: Row(
+        children: [
 
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: iconColor.withOpacity(0.15),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          const Icon(Icons.arrow_forward_ios, size: 16),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildHomePage() {
+  return SafeArea(
+    child: SingleChildScrollView(
+      child: Column(
+        children: [
+          _topBar(),
+          const SizedBox(height: 8),
+          _buildHeader(),
+          const SizedBox(height: 15),
+          _buildResourceCard(),
+          const SizedBox(height: 20),
+          _buildManagementSection(),
+          const SizedBox(height: 20),
+        ],
+      ),
+    ),
+  );
+}
   void _showUpdateDialog() {
     final icuController =
         TextEditingController(text: icuBeds.toString());

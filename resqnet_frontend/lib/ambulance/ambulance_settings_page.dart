@@ -234,174 +234,314 @@ Future<void> _logout() async {
   );
 }
 
-  /* ================= UI ================= */
+@override
+void dispose() {
+  nameController.dispose();
+  emailController.dispose();
+  phoneController.dispose();
+  licenseController.dispose();
+  vehicleController.dispose();
+  super.dispose();
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEFEFEF),
-      appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: const Text("Settings"),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              setState(() {
-                isEditing = !isEditing;
-              });
-            },
-          )
-        ],
+/* ================= UI ================= */
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+
+    body: Container(
+
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFD9F3F1),
+            Color(0xFF77C7C9),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
 
-                  const Text(
-                    "Profile",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight:
-                            FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
+      child: SafeArea(
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
 
-                  _buildField("Full Name",
-                      nameController, isEditing),
-                  _buildField("Email",
-                      emailController, false),
-                  _buildField("Phone",
-                      phoneController, false),
-                  _buildField("License Number",
-                      licenseController, isEditing),
-                  _buildField("Vehicle Number",
-                      vehicleController, isEditing),
-
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding:
-                        const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius:
-                          BorderRadius.circular(
-                              20),
-                    ),
-                    child: Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment
-                              .spaceBetween,
-                      children: [
-                        const Text("Status"),
-                        Text(
-                          status.toUpperCase(),
-                          style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight:
-                                  FontWeight.bold),
-                        )
-                      ],
-                    ),
-                  ),
-
-                  if (isEditing)
+                    /// HEADER
                     Padding(
-                      padding:
-                          const EdgeInsets.only(
-                              top: 20),
-                      child: ElevatedButton(
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.red,
-                          minimumSize:
-                              const Size
-                                  .fromHeight(50),
-                        ),
-                        onPressed: _updateProfile,
-                        child: const Text(
-                            "Save Changes"),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: [
+
+                          Row(
+                            children: [
+
+                              const SizedBox(width: 40),
+
+                              const Text(
+                                "Settings",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              setState(() {
+                                isEditing = !isEditing;
+                              });
+                            },
+                          )
+                        ],
                       ),
                     ),
 
-                  const SizedBox(height: 30),
+                    /// PROFILE INFO
 
-                  ElevatedButton(
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.blue,
-                      minimumSize:
-                          const Size
-                              .fromHeight(50),
+                    _infoCard(Icons.person, "Full Name",
+                        nameController, isEditing),
+
+                    _infoCard(Icons.email, "Email",
+                        emailController, false),
+
+                    _infoCard(Icons.phone, "Phone",
+                        phoneController, false),
+
+                    _infoCard(Icons.badge, "License Number",
+                        licenseController, isEditing),
+
+                    _infoCard(Icons.local_shipping,
+                        "Vehicle Number",
+                        vehicleController,
+                        isEditing),
+
+                    _statusCard(),
+
+                    const SizedBox(height: 20),
+
+                    /// SAVE CHANGES
+                    if (isEditing)
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(
+                                horizontal: 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(
+                                        12),
+                              ),
+                            ),
+                            onPressed: _updateProfile,
+                            child:
+                                const Text("Save Changes"),
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 15),
+
+                    /// UPDATE PASSWORD
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(
+                              horizontal: 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.lock),
+                          label:
+                              const Text("Update Password"),
+                          style:
+                              ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF009688),
+                            shape:
+                                RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                      12),
+                            ),
+                          ),
+                          onPressed: _showPasswordDialog,
+                        ),
+                      ),
                     ),
-                    onPressed:
-                        _showPasswordDialog,
-                    child:
-                        const Text("Update Password"),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
-                  ElevatedButton(
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.red,
-                      minimumSize:
-                          const Size
-                              .fromHeight(50),
+                    /// LOGOUT
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(
+                              horizontal: 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.logout),
+                          label: const Text("Logout"),
+                          style:
+                              ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFFF44336),
+                            shape:
+                                RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                      12),
+                            ),
+                          ),
+                          onPressed: _logout,
+                        ),
+                      ),
                     ),
-                    onPressed: _logout,
-                    child:
-                        const Text("Logout"),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
 
-  Widget _buildField(String label,
-      TextEditingController controller,
-      bool enabled) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(height: 6),
-          TextField(
-            controller: controller,
-            readOnly: !enabled,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.grey.shade300,
-              border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(30),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
-              enabledBorder:
-                  OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(30),
-              ),
-            ),
-          ),
-        ],
       ),
-    );
-  }
+    ),
+  );
 }
+
+Widget _infoCard(
+  IconData icon,
+  String title,
+  TextEditingController controller,
+  bool editable,
+) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    padding: const EdgeInsets.all(16),
+
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: const [
+        BoxShadow(color: Colors.black12, blurRadius: 4)
+      ],
+    ),
+
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+
+        /// ICON
+        CircleAvatar(
+          radius: 22,
+          backgroundColor: Colors.red.withOpacity(0.1),
+          child: Icon(icon, color: Colors.red),
+        ),
+
+        const SizedBox(width: 16),
+
+        /// FIELD
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              /// LABEL
+             Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              /// INPUT BOX
+              TextField(
+                controller: controller,
+                readOnly: !editable,
+
+                decoration: InputDecoration(
+                  filled: true,
+
+                  /// editable fields become white
+                  fillColor: isEditing && editable
+                      ? Colors.white
+                      : Colors.grey.shade200,
+
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _statusCard() {
+  return Container(
+    margin:
+        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    padding: const EdgeInsets.all(16),
+
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: const [
+        BoxShadow(color: Colors.black12, blurRadius: 4)
+      ],
+    ),
+
+    child: Row(
+      mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
+      children: [
+
+        const Text(
+          "Status",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        Text(
+          status.toUpperCase(),
+          style: const TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+    }

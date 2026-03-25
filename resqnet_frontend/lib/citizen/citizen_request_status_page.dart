@@ -26,7 +26,7 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
 
-  Timer? timer;
+  late Timer timer;
 
   bool loading = true;
 
@@ -79,6 +79,9 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
           loading = false;
 
           status = data["status"] ?? "pending";
+          if (status == "completed") {
+            timer?.cancel();
+          }
 
           driverName =
               data["ambulance"]?["fullName"] ?? "";

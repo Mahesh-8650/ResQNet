@@ -64,36 +64,38 @@ class _AmbulancePerformancePageState
     }
   }
 
-  Widget buildMetricCard(
-      String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 30, color: Colors.red),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+Widget buildMetricCard(
+  IconData icon,
+  String title,
+  String value,
+  Color iconColor,
+) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: const [
+        BoxShadow(color: Colors.black12, blurRadius: 4)
+      ],
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: iconColor, size: 28),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey),
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: const TextStyle(
@@ -103,119 +105,126 @@ class _AmbulancePerformancePageState
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        )
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: const Text("Performance"),
-        centerTitle: true,
-      ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(16),
-              child: Column(
-                children: [
+      body: Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFD9F3F1),
+        Color(0xFF77C7C9),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: SafeArea(
+    child: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : ListView(
+            children: [
 
-                  buildMetricCard(
-                    "Total Completed Cases",
-                    totalCompleted.toString(),
-                    Icons.check_circle,
+              const SizedBox(height: 20),
+
+              const Center(
+                child: Text(
+                  "Performance",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
-
-                  const SizedBox(height: 15),
-
-                  buildMetricCard(
-                    "Monthly Completed Cases",
-                    monthlyCompleted.toString(),
-                    Icons.calendar_month,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  buildMetricCard(
-                    "Average Response Time",
-                    "${avgResponseTime.toStringAsFixed(1)} sec",
-                    Icons.timer,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  buildMetricCard(
-                    "Total Distance Covered",
-                    "${totalDistance.toStringAsFixed(1)} km",
-                    Icons.route,
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Container(
-                    padding:
-                        const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              Colors.grey.shade300,
-                          blurRadius: 6,
-                          offset:
-                              const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-
-                        const Text(
-                          "Acceptance Rate",
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        LinearProgressIndicator(
-                          value:
-                              acceptanceRate / 100,
-                          backgroundColor:
-                              Colors.grey.shade300,
-                          color: Colors.green,
-                          minHeight: 10,
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Text(
-                          "${acceptanceRate.toStringAsFixed(1)} %",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+
+              const SizedBox(height: 30),
+
+              buildMetricCard(
+                Icons.check_circle,
+                "Total Completed Cases",
+                totalCompleted.toString(),
+                Colors.red,
+              ),
+
+              buildMetricCard(
+                Icons.calendar_month,
+                "Monthly Completed Cases",
+                monthlyCompleted.toString(),
+                Colors.orange,
+              ),
+
+              buildMetricCard(
+                Icons.timer,
+                "Average Response Time",
+                "${avgResponseTime.toStringAsFixed(1)} sec",
+                Colors.red,
+              ),
+
+              buildMetricCard(
+                Icons.route,
+                "Total Distance Covered",
+                "${totalDistance.toStringAsFixed(1)} km",
+                Colors.blue,
+              ),
+
+              _acceptanceCard(),
+
+              const SizedBox(height: 10),
+            ],
+          ),
+  ),
+),
     );
   }
+  Widget _acceptanceCard() {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: const [
+        BoxShadow(color: Colors.black12, blurRadius: 4)
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        const Text(
+          "Acceptance Rate",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+LinearProgressIndicator(
+  value: (acceptanceRate.clamp(0, 100)) / 100,
+  backgroundColor: Colors.grey.shade300,
+  color: Colors.green,
+  minHeight: 10,
+),
+        const SizedBox(height: 8),
+
+        Text(
+          "${acceptanceRate.toStringAsFixed(1)} %",
+          style: const TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          ),
+        )
+      ],
+    ),
+  );
+}
 }

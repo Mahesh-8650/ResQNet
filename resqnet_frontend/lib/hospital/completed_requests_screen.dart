@@ -84,163 +84,194 @@ class _CompletedRequestsScreenState
       }).toList();
     });
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text("Completed Cases"),
-        backgroundColor: const Color(0xFFD32F2F),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFB2DFDB),
+            Color(0xFF80CBC4),
+            Color(0xFF4DB6AC),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : completedRequests.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No Completed Cases",
-                    style: TextStyle(fontSize: 16),
+      child: SafeArea(
+        child: Column(
+          children: [
+
+            /// 🔥 TOP BAR (same as home)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: Text(
+                  "Completed Cases",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
-                )
-              : Column(
-                  children: [
-
-                    // ✅ Total Count
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        "Total Completed Cases: ${filteredRequests.length}",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    // ✅ Search Field
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: TextField(
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          hintText: "Search Patient...",
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onChanged: filterCases,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // ✅ List
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: filteredRequests.length,
-                        itemBuilder: (context, index) {
-
-                          final req = filteredRequests[index];
-                          final ambulance = req["completedBy"];
-
-                          return Card(
-                            elevation: 6,
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(18),
-                            ),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-
-                                // Status Strip
-                                Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8),
-                                  decoration:
-                                      const BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius:
-                                        BorderRadius.only(
-                                      topLeft:
-                                          Radius.circular(18),
-                                      topRight:
-                                          Radius.circular(18),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    "Completed",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight:
-                                          FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment
-                                            .start,
-                                    children: [
-
-                                      Text(
-                                        req["patientName"] ?? "",
-                                        style:
-                                            const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 10),
-
-                                      Text(
-                                          "Emergency: ${req["emergencyType"] ?? ""}"),
-
-                                      const SizedBox(height: 6),
-
-                                      Text(
-                                          "Ambulance: ${ambulance?["fullName"] ?? "Not available"}"),
-
-                                      Text(
-                                          "Vehicle: ${ambulance?["vehicleNumber"] ?? ""}"),
-
-                                      Text(
-                                          "Phone: ${ambulance?["phone"] ?? ""}"),
-
-                                      const SizedBox(height: 10),
-
-                                      Text(
-                                        "Completed At: ${formatToIndianTime(req["updatedAt"])}",
-                                        style:
-                                            const TextStyle(
-                                          fontSize: 12,
-                                          color:
-                                              Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
                 ),
-    );
-  }
+              ),
+            ),
+
+            /// 🔥 CONTENT
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : completedRequests.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No Completed Cases",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        )
+                      : Column(
+                          children: [
+
+                            /// Total Count
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Text(
+                                "Total Completed Cases: ${filteredRequests.length}",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            /// Search
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: TextField(
+                                controller: searchController,
+                                decoration: InputDecoration(
+                                  hintText: "Search Patient...",
+                                  prefixIcon: const Icon(Icons.search),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onChanged: filterCases,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            /// List
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: filteredRequests.length,
+                                itemBuilder: (context, index) {
+
+                                  final req = filteredRequests[index];
+                                  final ambulance = req["completedBy"];
+
+                                  return Card(
+                                    elevation: 6,
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(18),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+
+                                        /// Status Strip
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 8),
+                                          decoration:
+                                              const BoxDecoration(
+                                            color: Colors.green,
+                                            borderRadius:
+                                                BorderRadius.only(
+                                              topLeft:
+                                                  Radius.circular(18),
+                                              topRight:
+                                                  Radius.circular(18),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            "Completed",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight:
+                                                  FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.all(16),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+
+                                              Text(
+                                                req["patientName"] ?? "",
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                ),
+                                              ),
+
+                                              const SizedBox(height: 10),
+
+                                              Text(
+                                                  "Emergency: ${req["emergencyType"] ?? ""}"),
+
+                                              const SizedBox(height: 6),
+
+                                              Text(
+                                                  "Ambulance: ${ambulance?["fullName"] ?? "Not available"}"),
+
+                                              Text(
+                                                  "Vehicle: ${ambulance?["vehicleNumber"] ?? ""}"),
+
+                                              Text(
+                                                  "Phone: ${ambulance?["phone"] ?? ""}"),
+
+                                              const SizedBox(height: 10),
+
+                                              Text(
+                                                "Completed At: ${formatToIndianTime(req["updatedAt"])}",
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

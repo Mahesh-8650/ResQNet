@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../hospital/hospital_home_screen.dart';
 import '../ambulance/ambulance_home_screen.dart';
 import '../citizen/citizen_home_page.dart';
+import '../welcome/welcome_screen.dart';
 
 
 class OtpScreen extends StatefulWidget {
@@ -96,7 +97,18 @@ class _OtpScreenState extends State<OtpScreen> {
 
       if (response.statusCode == 200) {
 
-        SharedPreferences prefs = await SharedPreferences.getInstance();
+  // 🔴 ADD THIS BLOCK
+  if (data["account"] == null) {
+  _showDialog(
+    "Registration Successful",
+    data["message"] ?? "Waiting for admin approval",
+    goToWelcome: true,
+  );
+
+  setState(() => _isLoading = false);
+  return;
+}
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
 
 await prefs.setBool("isLoggedIn", true);
@@ -200,21 +212,34 @@ await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
     }
   }
 
-  void _showDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
+  void _showDialog(String title, String message, {bool goToWelcome = false}) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+
+            if (goToWelcome) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WelcomeScreen(),
+                ),
+                (route) => false,
+              );
+            }
+          },
+          child: const Text("OK"),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildOtpBox(int index) {
     return Expanded(
@@ -307,10 +332,15 @@ await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
                       List.generate(6, (index) => _buildOtpBox(index)),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "Expires in $minutes:${seconds.toString().padLeft(2, '0')}",
-                  style: const TextStyle(color: Colors.grey),
-                ),
+                _secondsRemaining > 0
+    ? Text(
+        "Expires in $minutes:${seconds.toString().padLeft(2, '0')}",
+        style: const TextStyle(color: Colors.grey),
+      )
+    : TextButton(
+        onPressed: _resendOtp,
+        child: const Text("Resend OTP"),
+      ),
                 const SizedBox(height: 25),
                 SizedBox(
                   width: double.infinity,

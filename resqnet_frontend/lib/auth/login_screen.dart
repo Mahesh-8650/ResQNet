@@ -29,6 +29,7 @@ if (email.isEmpty || !email.contains("@")) {
    // final fullPhone = "+${_selectedCountry.phoneCode}$phone";
 
     setState(() => _isLoading = true);
+    FocusScope.of(context).unfocus();
 
     try {
       final response = await http.post(
@@ -142,43 +143,13 @@ void dispose() {
 
                 const SizedBox(height: 10),
 
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _showCountryPicker,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE6EDF7),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(_selectedCountry.flagEmoji),
-                            const SizedBox(width: 6),
-                            Text("+${_selectedCountry.phoneCode}"),
-                            const Icon(Icons.arrow_drop_down),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: TextField(
-                        controller: _emailController,
-keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          hintText: "Enter email address",
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                TextField(
+  controller: _emailController,
+  keyboardType: TextInputType.emailAddress,
+  decoration: const InputDecoration(
+    hintText: "Enter email address",
+  ),
+),
 
                 const SizedBox(height: 30),
 

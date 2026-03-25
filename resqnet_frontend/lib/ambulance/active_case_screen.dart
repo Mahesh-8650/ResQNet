@@ -50,30 +50,45 @@ if (location == null) {
     final hospital = data["hospitalId"];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFFD32F2F),
-        centerTitle: true,
-        title: const Text(
-          "Active Case",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
+body: Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFD9F3F1),
+        Color(0xFF77C7C9),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: SafeArea(
+child: SingleChildScrollView(
+  child: Container(
+    height: MediaQuery.of(context).size.height,
+          padding: const EdgeInsets.all(20),
+      child: Column(          crossAxisAlignment:
               CrossAxisAlignment.start,
           children: [
+const SizedBox(height: 10),
 
+const Center(
+  child: Text(
+    "Active Case",
+    style: TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+),
+
+const SizedBox(height: 20),
            
 
             /* ===== PATIENT INFO ===== */
 
             _infoCard(
               "Patient Name",
-              data["patientName"] ?? "Unknown",
+              (data["patientName"] ?? "Unknown").toString(),
               Icons.person,
             ),
 
@@ -81,7 +96,7 @@ if (location == null) {
 
             _infoCard(
               "Emergency Type",
-              data["emergencyType"] ?? "Unknown",
+              (data["emergencyType"] ?? "Unknown").toString(),
               Icons.warning,
             ),
 
@@ -89,7 +104,10 @@ if (location == null) {
 
 _infoCard(
   "Patient Location",
-  data["patientAddress"] ?? "Address unavailable",
+  (data["patientAddress"] != null &&
+ data["patientAddress"].toString().trim().isNotEmpty)
+    ? data["patientAddress"].toString()
+    : "Address not available",
   Icons.location_on,
 ),
 
@@ -98,11 +116,13 @@ const SizedBox(height: 15),
 if (hospital != null)
   _infoCard(
     "Assigned Hospital",
-    hospital["hospitalName"] ?? "Unknown",
+    (hospital != null && hospital["hospitalName"] != null)
+    ? hospital["hospitalName"].toString()
+    : "Hospital not available",
     Icons.local_hospital,
   ),
-
-const SizedBox(height: 30),
+      
+const SizedBox(height: 25),
 
             
 
@@ -164,6 +184,9 @@ double hospitalLat = (hospitalCoords[1] as num).toDouble();
           ],
         ),
       ),
+),
+  ),
+)
     );
   }
 
@@ -227,7 +250,10 @@ double hospitalLat = (hospitalCoords[1] as num).toDouble();
                     style: const TextStyle(
                         fontSize: 16,
                         fontWeight:
-                            FontWeight.w600)),
+                            FontWeight.w600),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            ),
               ],
             ),
           )

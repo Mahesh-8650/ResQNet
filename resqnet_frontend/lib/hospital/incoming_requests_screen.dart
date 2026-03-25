@@ -68,254 +68,233 @@ class _IncomingRequestsScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text("Incoming Requests"),
-        backgroundColor: const Color(0xFFD32F2F),
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFB2DFDB),
+            Color(0xFF80CBC4),
+            Color(0xFF4DB6AC),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : requests.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No Incoming Requests",
-                    style: TextStyle(fontSize: 16),
+      child: SafeArea(
+        child: Column(
+          children: [
+
+            /// 🔥 TOP BAR (same as home)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: Text(
+                  "Incoming Requests",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
-                )
-              : ListView.builder(
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) {
-
-                    final req = requests[index];
-                    final ambulance = req["ambulanceId"];
-
-                    final double distance =
-                        (req["distanceKm"] ?? 0).toDouble();
-
-                    final eta = req["etaMinutes"];
-
-                    return AnimatedContainer(
-                      duration:
-                          const Duration(milliseconds: 400),
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: distance < 1
-                                ? Colors.green
-                                    .withOpacity(0.4)
-                                : Colors.black
-                                    .withOpacity(0.08),
-                            blurRadius:
-                                distance < 1 ? 20 : 12,
-                            spreadRadius:
-                                distance < 1 ? 2 : 0,
-                            offset:
-                                const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-
-                          // 🔴 Emergency Type Strip
-                          Container(
-                            padding:
-                                const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8),
-                            decoration:
-                                const BoxDecoration(
-                              color: Color(0xFFD32F2F),
-                              borderRadius:
-                                  BorderRadius.only(
-                                topLeft:
-                                    Radius.circular(18),
-                                topRight:
-                                    Radius.circular(18),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment
-                                      .spaceBetween,
-                              children: [
-                                Text(
-                                  req["emergencyType"] ??
-                                      "",
-                                  style:
-                                      const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                                const Text(
-                                  "On The Way",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          Padding(
-                            padding:
-                                const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment
-                                      .start,
-                              children: [
-
-                                Text(
-                                  req["patientName"] ??
-                                      "",
-                                  style:
-                                      const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-
-                                const SizedBox(
-                                    height: 12),
-
-                                Row(
-                                  children: [
-                                    const Icon(
-                                        Icons.person,
-                                        size: 18),
-                                    const SizedBox(
-                                        width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        ambulance?[
-                                                "fullName"] ??
-                                            "Driver unknown",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(
-                                    height: 6),
-
-                                Row(
-                                  children: [
-                                    const Icon(
-                                        Icons
-                                            .local_shipping,
-                                        size: 18),
-                                    const SizedBox(
-                                        width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        ambulance?[
-                                                "vehicleNumber"] ??
-                                            "Vehicle unknown",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(
-                                    height: 6),
-
-                                Row(
-                                  children: [
-                                    const Icon(
-                                        Icons.phone,
-                                        size: 18),
-                                    const SizedBox(
-                                        width: 8),
-                                    Text(
-                                      ambulance?[
-                                              "phone"] ??
-                                          "Phone unavailable",
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(
-                                    height: 12),
-
-                                Row(
-                                  children: [
-                                    const Icon(
-                                        Icons.route,
-                                        size: 18,
-                                        color:
-                                            Colors.blue),
-                                    const SizedBox(
-                                        width: 8),
-                                    Text(
-                                      "Distance: ${distance.toStringAsFixed(2)} km",
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(
-                                    height: 6),
-
-                                Row(
-                                  children: [
-                                    const Icon(
-                                        Icons.timer,
-                                        size: 18,
-                                        color:
-                                            Colors.orange),
-                                    const SizedBox(
-                                        width: 8),
-                                    Text(
-                                      eta == null
-                                          ? "ETA: Calculating..."
-                                          : "ETA: $eta minutes",
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(
-                                    height: 16),
-
-                                Container(
-                                  width: double.infinity,
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                          vertical:
-                                              10),
-                                  alignment:
-                                      Alignment.center,
-                                  child: const Text(
-                                    "Ambulance On The Way",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight:
-                                          FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
                 ),
-    );
-  }
+              ),
+            ),
+
+            /// 🔥 CONTENT
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : requests.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No Incoming Requests",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: requests.length,
+                          itemBuilder: (context, index) {
+
+                            final req = requests[index];
+                            final ambulance = req["ambulanceId"];
+
+                            final double distance =
+                                (req["distanceKm"] ?? 0).toDouble();
+
+                            final eta = req["etaMinutes"];
+
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 400),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: distance < 1
+                                        ? Colors.green.withOpacity(0.4)
+                                        : Colors.black.withOpacity(0.08),
+                                    blurRadius: distance < 1 ? 20 : 12,
+                                    spreadRadius: distance < 1 ? 2 : 0,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+
+                                  /// 🔴 Emergency Strip
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFD32F2F),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(18),
+                                        topRight: Radius.circular(18),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          req["emergencyType"] ?? "",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Text(
+                                          "On The Way",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+
+                                        Text(
+                                          req["patientName"] ?? "",
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.person, size: 18),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                ambulance?["fullName"] ??
+                                                    "Driver unknown",
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 6),
+
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.local_shipping,
+                                                size: 18),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                ambulance?["vehicleNumber"] ??
+                                                    "Vehicle unknown",
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 6),
+
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.phone, size: 18),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              ambulance?["phone"] ??
+                                                  "Phone unavailable",
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.route,
+                                                size: 18, color: Colors.blue),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "Distance: ${distance.toStringAsFixed(2)} km",
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 6),
+
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.timer,
+                                                size: 18, color: Colors.orange),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              eta == null
+                                                  ? "ETA: Calculating..."
+                                                  : "ETA: $eta minutes",
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 16),
+
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 10),
+                                          alignment: Alignment.center,
+                                          child: const Text(
+                                            "Ambulance On The Way",
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }
