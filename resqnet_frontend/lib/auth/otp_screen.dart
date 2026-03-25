@@ -119,6 +119,13 @@ await prefs.setString("userId", data["account"]?["_id"] ?? "");
 await prefs.setString("hospitalName", data["account"]?["hospitalName"] ?? "");
 await prefs.setString("fullName", data["account"]?["fullName"] ?? "");
 await prefs.setString("vehicleNumber", data["account"]?["vehicleNumber"] ?? "");
+// 🔥 ADD THIS (FOR CITIZEN)
+await prefs.setString("citizenName", data["account"]?["fullName"] ?? "");
+await prefs.setString("citizenEmail", data["account"]?["email"] ?? "");
+await prefs.setString("citizenPhone", data["account"]?["phone"] ?? "");
+await prefs.setString("citizenBloodGroup", data["account"]?["bloodGroup"] ?? "");
+await prefs.setString("citizenDob", data["account"]?["dateOfBirth"] ?? "");
+await prefs.setString("citizenEmergencyContact", data["account"]?["emergencyContact"] ?? "");
 
         final role = data["account"]?["role"];
 

@@ -99,24 +99,22 @@ async function offerToNextAmbulance(emergencyId) {
 
   if (!emergency || emergency.status === "assigned") return;
 
-//   const availableAmbulance = await Ambulance.findOne({
-//   isAvailable: true,
-//   isBusy: false,
-//   currentLocation: {
-//     $near: {
-//       $geometry: {
-//         type: "Point",
-//         coordinates: emergency.patientLocation.coordinates,
-//       },
-//       $maxDistance: 10000, // 50 km limit (optional)
-//     },
-//   },
-//   _id: { $ne: emergency.ambulanceId },
-// });
-
-const availableAmbulance = await Ambulance.findOne({
+  const availableAmbulance = await Ambulance.findOne({
   isAvailable: true,
-  isBusy: false,});
+  isBusy: false,
+  currentLocation: {
+    $near: {
+      $geometry: {
+        type: "Point",
+        coordinates: emergency.patientLocation.coordinates,
+      },
+      $maxDistance: 20000, // 20 km limit (optional)
+    },
+  },
+  _id: { $ne: emergency.ambulanceId },
+});
+
+
   
   if (!availableAmbulance) return;
 
@@ -128,22 +126,37 @@ const availableAmbulance = await Ambulance.findOne({
   /* ===== 🔔 SEND PUSH NOTIFICATION ===== */
 
   if (availableAmbulance.fcmToken) {
-    try {
-      await admin.messaging().send({
-        token: availableAmbulance.fcmToken,
-        notification: {
-          title: "🚑 New Emergency Request",
-          body: `Patient: ${emergency.patientName} | ${emergency.emergencyType}`,
-        },
-        data: {
-          emergencyId: emergency._id.toString(),
-          type: "emergency_offer",
-        },
-      });
-    } catch (err) {
-      console.error("FCM Send Error:", err);
+
+  try {
+
+    await admin.messaging().send({
+      token: availableAmbulance.fcmToken,
+      notification: {
+        title: "🚑 New Emergency Request",
+        body: `Patient: ${emergency.patientName} | ${emergency.emergencyType}`,
+      },
+      data: {
+        emergencyId: emergency._id.toString(),
+        type: "emergency_offer",
+      },
+    });
+
+  } catch (err) {
+
+    console.error("FCM Send Error:", err.message);
+
+    // 🔥 FIX: REMOVE INVALID TOKEN
+    if (err.code === "messaging/registration-token-not-registered") {
+
+      await Ambulance.findByIdAndUpdate(
+        availableAmbulance._id,
+        { fcmToken: null }
+      );
+
+      console.log("Invalid FCM token removed");
     }
   }
+}
 
  /* ===== 60 SECOND TIMEOUT ===== */
 

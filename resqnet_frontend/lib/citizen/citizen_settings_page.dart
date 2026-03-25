@@ -53,13 +53,55 @@ class _CitizenSettingsPageState extends State<CitizenSettingsPage> {
     "+91","+1","+44","+971"
   ];
 
+
+  Future<void> loadUserData() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    nameController.text =
+        prefs.getString("citizenName") ?? widget.userName;
+
+    emailController.text =
+        prefs.getString("citizenEmail") ?? widget.email;
+
+    phoneController.text =
+        prefs.getString("citizenPhone") ?? widget.phone;
+
+    selectedBloodGroup =
+        prefs.getString("citizenBloodGroup") ?? widget.bloodGroup;
+
+    final savedDob = prefs.getString("citizenDob") ?? widget.dob;
+
+    if (savedDob.isNotEmpty) {
+      try {
+        final parts = savedDob.split("-");
+        selectedDob = DateTime(
+          int.parse(parts[2]),
+          int.parse(parts[1]),
+          int.parse(parts[0]),
+        );
+      } catch (_) {}
+    }
+
+    final savedEmergency =
+        prefs.getString("citizenEmergencyContact") ??
+        widget.emergencyContact;
+
+    if (savedEmergency.contains(" ")) {
+      final parts = savedEmergency.split(" ");
+      selectedCountryCode = parts[0];
+      emergencyController.text = parts[1];
+    } else {
+      emergencyController.text = savedEmergency;
+    }
+  });
+}
+
   @override
   void initState() {
     super.initState();
 
-    nameController.text = widget.userName;
-    emailController.text = widget.email;
-    phoneController.text = widget.phone;
+    loadUserData();
 
     /* ================= BLOOD GROUP ================= */
 
@@ -137,16 +179,26 @@ class _CitizenSettingsPageState extends State<CitizenSettingsPage> {
       }),
     );
 
-    if (response.statusCode == 200) {
+   if (response.statusCode == 200) {
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile Updated")),
-      );
+  final prefs = await SharedPreferences.getInstance();
 
-      setState(() {
-        isEditing = false;
-      });
-    }
+  await prefs.setString("citizenName", nameController.text);
+  await prefs.setString("citizenBloodGroup", selectedBloodGroup);
+  await prefs.setString("citizenDob", formattedDob);
+  await prefs.setString(
+    "citizenEmergencyContact",
+    "$selectedCountryCode ${emergencyController.text}",
+  );
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Profile Updated")),
+  );
+
+  setState(() {
+    isEditing = false;
+  });
+}
   }
 
   /* ===================================================== */

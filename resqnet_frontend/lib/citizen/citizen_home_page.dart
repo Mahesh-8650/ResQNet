@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'citizen_request_status_page.dart';
@@ -35,6 +36,8 @@ class _CitizenHomePageState extends State<CitizenHomePage>
   late AnimationController _controller;
 
   bool isSendingRequest = false;
+  String userName = "";
+  String phone = "";
 
   double? latitude;
   double? longitude;
@@ -47,6 +50,16 @@ class _CitizenHomePageState extends State<CitizenHomePage>
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
 
+  
+  Future<void> loadUserData() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    userName = prefs.getString("citizenName") ?? widget.userName;
+    phone = prefs.getString("citizenPhone") ?? widget.phone;
+  });
+}
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +70,7 @@ class _CitizenHomePageState extends State<CitizenHomePage>
           duration: const Duration(milliseconds: 800),
         )..repeat();
 
+    loadUserData();
     getLocation();
   }
 
@@ -141,13 +155,15 @@ class _CitizenHomePageState extends State<CitizenHomePage>
 
   /* ================= SOS REQUEST ================= */
 
-  Future<void> triggerSOS() async {
+Future<void> triggerSOS() async {
 
-    if (isSendingRequest) return;
+  if (isSendingRequest) return;
 
-    setState(() {
-      isSendingRequest = true;
-    });
+  setState(() {
+    isSendingRequest = true;
+  });
+
+  try {
 
     await getLocation();
 
@@ -155,70 +171,73 @@ class _CitizenHomePageState extends State<CitizenHomePage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Location not available")),
       );
+
+      setState(() => isSendingRequest = false); // ✅ FIX
       return;
     }
 
-    try {
+    String address = "";
 
-      String address = "";
+    final url =
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=YOUR_API_KEY";
 
-final url =
-    "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+    final geoResponse = await http.get(Uri.parse(url));
 
-final geoResponse = await http.get(Uri.parse(url));
+    if (geoResponse.statusCode == 200) {
+      final data = jsonDecode(geoResponse.body);
 
-if (geoResponse.statusCode == 200) {
-  final data = jsonDecode(geoResponse.body);
+      if (data["results"].isNotEmpty) {
+        address = data["results"][0]["formatted_address"];
+      }
+    }
 
-  if (data["results"].isNotEmpty) {
-    address = data["results"][0]["formatted_address"];
-  }
-}
-      final response = await http.post(
-        Uri.parse("$baseUrl/api/citizen-emergency/create"),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "patientName": widget.userName,
-          "patientPhone": widget.phone,
-          "emergencyType": "General Emergency",
-          "latitude": latitude,
-          "longitude": longitude,
-          "patientAddress": address,
-          "hospitalId": selectedHospitalId,
-        }),
+    final response = await http.post(
+      Uri.parse("$baseUrl/api/citizen-emergency/create"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "patientName": userName,
+        "patientPhone": phone,
+        "emergencyType": "General Emergency",
+        "latitude": latitude,
+        "longitude": longitude,
+        "patientAddress": address,
+        "hospitalId": selectedHospitalId,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+
+      setState(() => isSendingRequest = false); // ✅ FIX
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CitizenRequestStatusPage(
+            phone: phone,
+            citizenLat: latitude!,
+            citizenLng: longitude!,
+          ),
+        ),
       );
 
-      if (response.statusCode == 201) {
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CitizenRequestStatusPage(
-              phone: widget.phone,
-              citizenLat: latitude!,
-              citizenLng: longitude!,
-            ),
-          ),
-        );
-
-      } else {
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to send emergency request")),
-        );
-
-      }
-
-    } catch (e) {
+    } else {
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Server connection failed")),
+        const SnackBar(content: Text("Failed to send emergency request")),
       );
 
+      setState(() => isSendingRequest = false); // ✅ FIX
     }
+
+  } catch (e) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Server connection failed")),
+    );
+
+    setState(() => isSendingRequest = false); // ✅ FIX
   }
+}
 
   /* ================= OPEN HOSPITAL PAGE ================= */
 
@@ -314,7 +333,7 @@ if (geoResponse.statusCode == 200) {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                "Welcome, ${widget.userName.toUpperCase()}",
+                "Welcome, ${userName.toUpperCase()}",
                 style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold),

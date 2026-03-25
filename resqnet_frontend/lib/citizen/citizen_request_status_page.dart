@@ -26,7 +26,7 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
   final String baseUrl =
       "https://resqnet-backend-1xe3.onrender.com";
 
-  late Timer timer;
+   Timer? timer;
 
   bool loading = true;
 
@@ -48,7 +48,7 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
     fetchStatus();
 
     timer = Timer.periodic(
-      const Duration(seconds: 3),
+      const Duration(seconds: 5),
       (_) => fetchStatus(),
     );
   }
@@ -74,14 +74,20 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
         final data = jsonDecode(response.body);
 
+        final newStatus = data["status"] ?? "pending";
+
+        if (newStatus =="assigned" || newStatus == "completed") {
+            timer?.cancel();
+          }
+
+          if(!mounted) return;
+
         setState(() {
 
           loading = false;
 
-          status = data["status"] ?? "pending";
-          if (status == "completed") {
-            timer?.cancel();
-          }
+          status = newStatus;
+          
 
           driverName =
               data["ambulance"]?["fullName"] ?? "";
