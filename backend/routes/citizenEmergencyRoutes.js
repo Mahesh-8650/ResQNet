@@ -168,18 +168,19 @@ setTimeout(async () => {
 }, 60000);
 }
 
+
 /* ===================================================== */
 /* 🚑 GET ACTIVE EMERGENCY FOR AMBULANCE */
 /* ===================================================== */
 
+
 router.get("/ambulance/:ambulanceId", async (req, res) => {
   try {
     const { ambulanceId } = req.params;
-    const objectId = new mongoose.Types.ObjectId(ambulanceId);
 
     const emergency = await CitizenEmergency.findOne({
-      ambulanceId: objectId,
-      status: { $ne: "completed" },
+      ambulanceId,
+      status: { $in: ["offered", "assigned"] },
     })
       .populate(
         "hospitalId",
