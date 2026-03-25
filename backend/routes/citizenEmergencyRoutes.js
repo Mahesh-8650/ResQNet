@@ -99,21 +99,25 @@ async function offerToNextAmbulance(emergencyId) {
 
   if (!emergency || emergency.status === "assigned") return;
 
-  const availableAmbulance = await Ambulance.findOne({
-  isAvailable: true,
-  isBusy: false,
-  currentLocation: {
-    $near: {
-      $geometry: {
-        type: "Point",
-        coordinates: emergency.patientLocation.coordinates,
-      },
-      $maxDistance: 10000, // 50 km limit (optional)
-    },
-  },
-  _id: { $ne: emergency.ambulanceId },
-});
+//   const availableAmbulance = await Ambulance.findOne({
+//   isAvailable: true,
+//   isBusy: false,
+//   currentLocation: {
+//     $near: {
+//       $geometry: {
+//         type: "Point",
+//         coordinates: emergency.patientLocation.coordinates,
+//       },
+//       $maxDistance: 10000, // 50 km limit (optional)
+//     },
+//   },
+//   _id: { $ne: emergency.ambulanceId },
+// });
 
+const availableAmbulance = await Ambulance.findOne({
+  isAvailable: true,
+  isBusy: false,});
+  
   if (!availableAmbulance) return;
 
   emergency.ambulanceId = availableAmbulance._id;
