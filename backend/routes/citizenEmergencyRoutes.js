@@ -200,6 +200,9 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
         "hospitalId",
         "hospitalName address phone location"
       )
+      .populate("ambulanceId",
+        "fullName vehicleNumber currentLocation"
+      )
       .sort({ createdAt: -1 });
 
       if (!emergency || !emergency.ambulanceId) {
