@@ -885,25 +885,7 @@ router.put("/update-location/:id", async (req, res) => {
 });
 
 
-/* ===================================================== */
-/* ============ GET AMBULANCE DETAILS ================== */
-/* ===================================================== */
 
-router.get("/ambulance/:id", async (req, res) => {
-  try {
-    const ambulance = await Ambulance.findById(req.params.id);
-
-    if (!ambulance) {
-      return res.status(404).json({ message: "Ambulance not found" });
-    }
-
-    res.json(ambulance);
-
-  } catch (error) {
-    console.error("GET AMBULANCE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
 
 
