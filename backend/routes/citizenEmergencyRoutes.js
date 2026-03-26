@@ -194,7 +194,7 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
     const emergency = await CitizenEmergency.findOne({
       ambulanceId: objectId,
-      status: { $ne: "completed" },
+      status: { $in: ["offered", "assigned"] },
     })
       .populate(
         "hospitalId",
@@ -202,9 +202,10 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
       )
       .sort({ createdAt: -1 });
 
-    if (!emergency) {
-      return res.status(200).json({ hasEmergency: false });
-    }
+      if (!emergency || !emergency.ambulanceId) {
+  return res.status(200).json({ hasEmergency: false });
+}
+
 
     return res.status(200).json({
       hasEmergency: true,
