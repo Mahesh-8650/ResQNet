@@ -484,6 +484,7 @@ body: jsonEncode({
 
 Future<void> _openActiveCase() async {
 
+await _checkForAssignedEmergency(); // Ensure we have the latest emergency data
 
 if (activeEmergency == null) {  
   ScaffoldMessenger.of(context).showSnackBar(  

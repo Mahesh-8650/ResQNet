@@ -347,12 +347,12 @@ if (instruction != lastSpokenInstruction) {
     }
   }
 
-  void _markPatientReached() {
+  Future<void> _markPatientReached() async {
   setState(() {
     reachedPatient = true;
   });
 
-  _drawRoute();
+  await _drawRoute();
 }
 Future<void> _completeEmergency() async {
 
