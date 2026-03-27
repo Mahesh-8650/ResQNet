@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'ambulance_map_page.dart';
+import 'package:http/http.dart' as http;
 
 class ActiveCaseScreen extends StatefulWidget {
   final String emergencyId;
@@ -25,12 +27,54 @@ class _ActiveCaseScreenState
   final String baseUrl =
       "https://resqnet-oe5z.onrender.com";
 
+  Map<String, dynamic>? liveData;
+bool isLoading = true;
+Timer? _timer;
+
 
 
  
 @override
 void initState() {
   super.initState();
+
+  fetchEmergency();
+
+  // 🔥 ADD THIS
+  _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+    fetchEmergency();
+  });
+}
+Future<void> fetchEmergency() async {
+  try {
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/citizen-emergency/ambulance/${widget.ambulanceId}")
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data["hasEmergency"] == true) {
+      setState(() {
+        liveData = data["emergency"];
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+@override
+void dispose() {
+  _timer?.cancel();
+  super.dispose();
 }
   
   /* ================= UI ================= */
@@ -38,7 +82,14 @@ void initState() {
   @override
   Widget build(BuildContext context) {
 
-    final data = widget.emergencyData;
+    if (isLoading) {
+  return const Scaffold(
+    body: Center(child: CircularProgressIndicator()),
+  );
+}
+
+
+final data = liveData ?? widget.emergencyData;
 final location = data["patientLocation"];
 
 if (location == null ||

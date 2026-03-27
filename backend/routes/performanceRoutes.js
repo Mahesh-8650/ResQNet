@@ -51,23 +51,28 @@ router.get("/:ambulanceId", async (req, res) => {
     }
 
     // ✅ Acceptance Rate
-    const totalOffered = await CitizenEmergency.countDocuments({
-      ambulanceId,
-      offeredAt: { $ne: null },
-    });
+const totalAssigned = await CitizenEmergency.countDocuments({
+  ambulanceId,
+  status: "assigned",
+});
 
-    const totalAccepted = await CitizenEmergency.countDocuments({
-      ambulanceId,
-      status: { $in: ["assigned", "completed"] },
-    });
+const completedCount = await CitizenEmergency.countDocuments({
+  completedBy: ambulanceId,
+  status: "completed",
+});
 
-    let acceptanceRate = 0;
+const totalAccepted = totalAssigned + completedCount;
 
-    if (totalOffered > 0) {
-      acceptanceRate =
-        (totalAccepted / totalOffered) * 100;
-    }
+const totalOffered = await CitizenEmergency.countDocuments({
+  ambulanceId,
+  offeredAt: { $ne: null },
+});
 
+let acceptanceRate = 0;
+
+if (totalOffered > 0) {
+  acceptanceRate = (totalAccepted / totalOffered) * 100;
+}
     // ✅ Total Distance Covered
     const totalDistance = completedCases.reduce(
       (sum, c) => sum + (c.distanceCoveredKm || 0),

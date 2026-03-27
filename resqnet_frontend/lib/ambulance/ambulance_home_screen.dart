@@ -529,8 +529,8 @@ end: Alignment.bottomCenter,
 ),
 ),
 child: SafeArea(
-child: SingleChildScrollView(
-child: Column(
+ child:  SingleChildScrollView(
+      child: Column(
 children: [
 
 const SizedBox(height: 30),  
@@ -562,7 +562,7 @@ const SizedBox(height: 30),
             ],  
           ),  
         ),  
-
+      
         const SizedBox(height: 15),  
 
         /// DUTY CONTROL  
@@ -700,8 +700,8 @@ const SizedBox(height: 30),
         const SizedBox(height: 30),  
 
       ],  
-    ),  
-  ),  
+    ), 
+),
 ),
 
 );
