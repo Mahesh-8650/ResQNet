@@ -63,9 +63,11 @@ const completedCount = await CitizenEmergency.countDocuments({
 
 const totalAccepted = totalAssigned + completedCount;
 
-const totalOffered = await CitizenEmergency.countDocuments({
-  ambulanceId,
-  offeredAt: { $ne: null },
+const totalCases = await CitizenEmergency.countDocuments({
+  $or: [
+    { ambulanceId: ambulanceId },
+    { completedBy: ambulanceId },
+  ],
 });
 
 let acceptanceRate = 0;
