@@ -73,7 +73,7 @@ const totalCases = await CitizenEmergency.countDocuments({
 let acceptanceRate = 0;
 
 if (totalCases > 0) {
-  acceptanceRate = (totalAccepted / totalOffered) * 100;
+  acceptanceRate = (totalAccepted / totalCases) * 100;
 }
     // ✅ Total Distance Covered
     const totalDistance = completedCases.reduce(
