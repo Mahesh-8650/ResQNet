@@ -57,7 +57,7 @@ class _AmbulanceMapPageState extends State<AmbulanceMapPage> {
   final FlutterTts flutterTts = FlutterTts();
   String lastSpokenInstruction = "";
 
-  final String apiKey = "AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+  final String apiKey = "AIzaSyD4mbUNGRXLThlB54YDgH5J7hdXtVLB8WU";
 
   Future<void> _getDriverLocation() async {
 
