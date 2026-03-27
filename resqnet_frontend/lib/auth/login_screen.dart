@@ -104,12 +104,53 @@ void dispose() {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
+return Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFD9F3F1),
+        Color(0xFF77C7C9),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
+    body: SafeArea(
+  child: Column(
+    children: [
+      Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 10),
+  child: Row(
+    children: [
+      IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      const Expanded(
+        child: Text(
+          "Login",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      const SizedBox(width: 48),
+    ],
+  ),
+),
+
+const SizedBox(height: 10),
+          Expanded(
+  child: Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
             width: 420,
             padding: const EdgeInsets.symmetric(
               horizontal: 28,
@@ -196,7 +237,12 @@ void dispose() {
               ],
             ),
           ),
-        ),
+  ),
+    ),
+  ),
+        ],
+          ),
+  ),
       ),
     );
   }

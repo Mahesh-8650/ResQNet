@@ -37,6 +37,9 @@ flutter:
   assets:
     - assets/ambulance.png
     - assets/images/hospital_bg.png
+    - assets/icon.png
+    - assets/images/image.png
+
     
 flutter_launcher_icons:
   android: true

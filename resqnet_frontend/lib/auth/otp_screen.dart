@@ -311,18 +311,67 @@ await prefs.setString("citizenEmergencyContact", data["account"]?["emergencyCont
     final minutes = _secondsRemaining ~/ 60;
     final seconds = _secondsRemaining % 60;
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(title: const Text("Verify OTP")),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Container(
+    return Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFD9F3F1),
+        Color(0xFF77C7C9),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Column(
+    children: [
+      Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 10),
+  child: Row(
+    children: [
+      IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      const Expanded(
+        child: Text(
+          "Verify OTP",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      const SizedBox(width: 48),
+    ],
+  ),
+),
+
+const SizedBox(height: 20),
+
+Expanded(
+  child: Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Container(
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
+  color: Colors.white,
+  borderRadius: BorderRadius.circular(20),
+  boxShadow: [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.05),
+      blurRadius: 18,
+      spreadRadius: 2,
+      offset: const Offset(0, 6),
+    ),
+  ],
+),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -364,7 +413,13 @@ await prefs.setString("citizenEmergencyContact", data["account"]?["emergencyCont
             ),
           ),
         ),
-      ),
+  ),
+  ),
+      
+      ],
+  ),
+    ),
+  ),
     );
   }
 }
