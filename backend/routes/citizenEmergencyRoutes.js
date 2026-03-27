@@ -190,7 +190,11 @@ setTimeout(async () => {
 router.get("/ambulance/:ambulanceId", async (req, res) => {
   try {
     const { ambulanceId } = req.params;
-    const objectId = new mongoose.Types.ObjectId(ambulanceId);
+    if (!mongoose.Types.ObjectId.isValid(ambulanceId)) {
+  return res.status(200).json({ hasEmergency: false });
+}
+
+const objectId = new mongoose.Types.ObjectId(ambulanceId);
 
     const emergency = await CitizenEmergency.findOne({
       ambulanceId: objectId,
@@ -217,7 +221,7 @@ router.get("/ambulance/:ambulanceId", async (req, res) => {
 
   } catch (error) {
     console.error("Fetch ambulance emergency error:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(200).json({ hasEmergency: false });
   }
 });
 /* ===================================================== */

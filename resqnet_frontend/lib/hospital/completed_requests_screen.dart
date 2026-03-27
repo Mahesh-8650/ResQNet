@@ -18,7 +18,7 @@ class CompletedRequestsScreen extends StatefulWidget {
 class _CompletedRequestsScreenState
     extends State<CompletedRequestsScreen> {
 
-  final String baseUrl = "https://resqnet-backend-1xe3.onrender.com";
+  final String baseUrl = "https://resqnet-oe5z.onrender.com";
 
   bool isLoading = true;
 

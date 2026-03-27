@@ -17,7 +17,7 @@ class CaseHistoryPage extends StatefulWidget {
 class _CaseHistoryPageState extends State<CaseHistoryPage> {
 
   final String baseUrl =
-      "https://resqnet-backend-1xe3.onrender.com";
+      "https://resqnet-oe5z.onrender.com";
 
   final TextEditingController _searchController =
       TextEditingController();

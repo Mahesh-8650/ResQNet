@@ -32,7 +32,7 @@ class CitizenSettingsPage extends StatefulWidget {
 class _CitizenSettingsPageState extends State<CitizenSettingsPage> {
 
   final String baseUrl =
-      "https://resqnet-backend-1xe3.onrender.com";
+      "https://resqnet-oe5z.onrender.com";
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();

@@ -87,7 +87,7 @@ class _RegisterAmbulanceScreenState
       var request = http.MultipartRequest(
         "POST",
         Uri.parse(
-            "https://resqnet-backend-1xe3.onrender.com/api/auth/register/ambulance"),
+            "https://resqnet-oe5z.onrender.com/api/auth/register/ambulance"),
       );
 
       request.fields["fullName"] =

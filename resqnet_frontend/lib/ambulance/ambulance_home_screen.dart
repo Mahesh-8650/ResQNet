@@ -46,7 +46,7 @@ bool _isOfferDialogShowing = false;
 bool isAccepting = false;
 
 final String baseUrl =
-"https://resqnet-backend-1xe3.onrender.com";
+"https://resqnet-oe5z.onrender.com";
 
 Timer? _refreshTimer;
 Timer? _gpsMonitorTimer;

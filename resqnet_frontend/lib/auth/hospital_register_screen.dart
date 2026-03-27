@@ -134,7 +134,7 @@ class _HospitalRegisterScreenState
       var request = http.MultipartRequest(
         "POST",
         Uri.parse(
-            "https://resqnet-backend-1xe3.onrender.com/api/auth/register/hospital"),
+            "https://resqnet-oe5z.onrender.com/api/auth/register/hospital"),
       );
 
       request.fields["hospitalName"] =

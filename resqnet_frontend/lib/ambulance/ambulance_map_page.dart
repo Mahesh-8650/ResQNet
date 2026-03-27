@@ -57,7 +57,7 @@ class _AmbulanceMapPageState extends State<AmbulanceMapPage> {
   final FlutterTts flutterTts = FlutterTts();
   String lastSpokenInstruction = "";
 
-  final String apiKey = "AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+  final String apiKey = "AIzaSyD4mbUNGRXLThlB54YDgH5J7hdXtVLB8WU";
 
   Future<void> _getDriverLocation() async {
 
@@ -104,7 +104,7 @@ Future<void> _fetchDriverLocation() async {
 
     final response = await http.get(
       Uri.parse(
-        "https://resqnet-backend-1xe3.onrender.com/api/citizen-emergency/ambulance/${widget.ambulanceId}",
+        "https://resqnet-oe5z.onrender.com/api/citizen-emergency/ambulance/${widget.ambulanceId}",
       ),
     );
 
@@ -362,7 +362,7 @@ Future<void> _completeEmergency() async {
 
     await http.put(
       Uri.parse(
-        "https://resqnet-backend-1xe3.onrender.com/api/citizen-emergency/update-status/$emergencyId",
+        "https://resqnet-oe5z.onrender.com/api/citizen-emergency/update-status/$emergencyId",
       ),
       headers: {
         "Content-Type": "application/json",

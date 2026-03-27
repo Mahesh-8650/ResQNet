@@ -37,7 +37,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Timer? _timer;
 
   final String baseUrl =
-      "https://resqnet-backend-1xe3.onrender.com";
+      "https://resqnet-oe5z.onrender.com";
 
   @override
   void initState() {

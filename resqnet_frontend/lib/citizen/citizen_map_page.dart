@@ -114,7 +114,7 @@ void initState() {
 
   final response = await http.get(
     Uri.parse(
-      "https://resqnet-backend-1xe3.onrender.com/api/citizen-emergency/status/${widget.phone}"
+      "https://resqnet-oe5z.onrender.com/api/citizen-emergency/status/${widget.phone}"
     ),
   );
 
@@ -191,7 +191,7 @@ void _animateAmbulance(LatLng newLocation) {
 
   Future<void> _drawRoute() async {
 
-  final String apiKey = "AIzaSyBEn7X8fuoi_O5kRqEH_Hacbf_oCmBYiNw";
+  final String apiKey = "AIzaSyD4mbUNGRXLThlB54YDgH5J7hdXtVLB8WU";
 
   final String url =
       "https://maps.googleapis.com/maps/api/directions/json?"

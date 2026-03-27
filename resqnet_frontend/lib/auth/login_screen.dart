@@ -33,7 +33,7 @@ if (email.isEmpty || !email.contains("@")) {
 
     try {
       final response = await http.post(
-        Uri.parse("https://resqnet-backend-1xe3.onrender.com/api/auth/send-otp"),
+        Uri.parse("https://resqnet-oe5z.onrender.com/api/auth/send-otp"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": email,
