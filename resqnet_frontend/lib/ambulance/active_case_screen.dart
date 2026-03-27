@@ -39,14 +39,15 @@ void initState() {
   Widget build(BuildContext context) {
 
     final data = widget.emergencyData;
-    final location = data["patientLocation"];
+final location = data["patientLocation"];
 
-if (location == null) {
+if (location == null ||
+    location is! Map) {
+      
   return const Scaffold(
     body: Center(child: CircularProgressIndicator()),
   );
-}
-   
+}   
     final hospital = data["hospitalId"];
 
     return Scaffold(
@@ -113,7 +114,7 @@ _infoCard(
 
 const SizedBox(height: 15),
 
-if (hospital != null)
+if (hospital is Map)
   _infoCard(
     "Assigned Hospital",
     (hospital != null && hospital["hospitalName"] != null)
@@ -144,21 +145,41 @@ _primaryButton(
       return;
     }
 
-    final patientCoords = patientLocation["coordinates"];
-final hospitalCoords = hospital["location"]["coordinates"];
+final patientCoords = patientLocation["coordinates"];
 
-if (patientCoords == null ||
-    hospitalCoords == null ||
-    patientCoords is! List ||
-    hospitalCoords is! List ||
-    patientCoords.length < 2 ||
-    hospitalCoords.length < 2) {
-
+if (patientCoords is! List || patientCoords.length < 2) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Invalid location data")),
+    const SnackBar(content: Text("Invalid patient coordinates")),
   );
   return;
 }
+
+
+// 🔥 SAFE hospital extraction
+if (hospital is! Map) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Hospital data not ready")),
+  );
+  return;
+}
+
+final hospitalLocation = hospital["location"];
+
+if (hospitalLocation == null ||
+    hospitalLocation is! Map ||
+    hospitalLocation["coordinates"] == null ||
+    hospitalLocation["coordinates"] is! List ||
+    hospitalLocation["coordinates"].length < 2) {
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Invalid hospital location")),
+  );
+  return;
+}
+
+final hospitalCoords = hospitalLocation["coordinates"];
+
+
 
 double patientLng = (patientCoords[0] as num).toDouble();
 double patientLat = (patientCoords[1] as num).toDouble();

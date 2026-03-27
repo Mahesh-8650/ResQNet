@@ -207,7 +207,13 @@ const objectId = new mongoose.Types.ObjectId(ambulanceId);
       .populate("ambulanceId",
         "fullName vehicleNumber currentLocation"
       )
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+      if (emergency && emergency.hospitalId && typeof emergency.hospitalId === "string") {
+  const hospital = await Hospital.findById(emergency.hospitalId);
+  emergency.hospitalId = hospital;
+}
 
       if (!emergency || !emergency.ambulanceId) {
   return res.status(200).json({ hasEmergency: false });
@@ -403,14 +409,21 @@ router.get("/status/:phone", async (req, res) => {
       status: { $in: ["pending", "offered", "assigned"] }
     })
     .populate("ambulanceId", "fullName vehicleNumber currentLocation")
-    .populate("hospitalId", "hospitalName location")
+    .populate("hospitalId", "hospitalName address phone location")
     .sort({ createdAt: -1 });
+
+ 
 
     if (!emergency) {
       return res.status(200).json({
         status: "none"
       });
     }
+
+       if (emergency && emergency.hospitalId && typeof emergency.hospitalId === "string") {
+  const hospital = await Hospital.findById(emergency.hospitalId);
+  emergency.hospitalId = hospital;
+}
 
     return res.status(200).json({
       status: emergency.status,

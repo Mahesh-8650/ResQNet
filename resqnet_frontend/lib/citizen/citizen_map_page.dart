@@ -122,18 +122,17 @@ void initState() {
 
     final data = jsonDecode(response.body);
 
-    if (data["ambulance"]?["currentLocation"]?["coordinates"] != null) {
+    var coords = data["ambulance"]?["currentLocation"]?["coordinates"];
 
-      double lng =
-          data["ambulance"]["currentLocation"]["coordinates"][0];
+if (coords is List && coords.length >= 2) {
 
-      double lat =
-          data["ambulance"]["currentLocation"]["coordinates"][1];
+  double lng = coords[0];
+  double lat = coords[1];
 
-      _animateAmbulance(LatLng(lat, lng));
+  _animateAmbulance(LatLng(lat, lng));
 
-      _drawRoute();
-    }
+  _drawRoute();
+}
   }
 }
 
@@ -191,6 +190,8 @@ void _animateAmbulance(LatLng newLocation) {
 
   Future<void> _drawRoute() async {
 
+  if (ambulanceLocation == null) return;
+  
   final String apiKey = "AIzaSyD4mbUNGRXLThlB54YDgH5J7hdXtVLB8WU";
 
   final String url =

@@ -179,7 +179,7 @@ Future<void> triggerSOS() async {
     String address = "";
 
     final url =
-        "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=YOUR_API_KEY";
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=AIzaSyD4mbUNGRXLThlB54YDgH5J7hdXtVLB8WU";
 
     final geoResponse = await http.get(Uri.parse(url));
 
