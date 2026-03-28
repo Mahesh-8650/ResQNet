@@ -207,6 +207,13 @@ Future<void> triggerSOS() async {
 
     if (response.statusCode == 201) {
 
+      final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool("hasActiveRequest", true);
+  await prefs.setString("requestPhone", phone);
+  await prefs.setDouble("citizenLat", latitude!);
+  await prefs.setDouble("citizenLng", longitude!);
+
+
       setState(() => isSendingRequest = false); // ✅ FIX
 
       Navigator.push(
@@ -272,60 +279,67 @@ Future<void> triggerSOS() async {
 
     const Color baseRedColor = Color(0xFFFF0000);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFA8DADC),
+        Color(0xFF80CBC4),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            /// HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              color: Colors.red,
-              child:  Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+            /// SIMPLE HEADER
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
 
-                  Icon(Icons.arrow_back, color: Colors.white),
+      // LEFT ICON (optional)
+      Icon(Icons.menu, color: Colors.black),
 
-                  Text(
-                    "ResQNet",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold),
-                  ),
-
-                  IconButton(
-  icon: const Icon(Icons.settings, color: Colors.white),
-  onPressed: () {
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CitizenSettingsPage(
-          citizenId: widget.citizenId,
-          userName: widget.userName,
-          email: widget.email,
-          phone: widget.phone,
-          bloodGroup: widget.bloodGroup,
-          dob: widget.dob,
-          emergencyContact: widget.emergencyContact,
+      // TITLE
+      const Text(
+        "ResQNet",
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
-    );
 
-  },
-),
-
-                ],
+      // SETTINGS
+      IconButton(
+        icon: const Icon(Icons.settings, color: Colors.black),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CitizenSettingsPage(
+                citizenId: widget.citizenId,
+                userName: widget.userName,
+                email: widget.email,
+                phone: widget.phone,
+                bloodGroup: widget.bloodGroup,
+                dob: widget.dob,
+                emergencyContact: widget.emergencyContact,
               ),
             ),
+          );
+        },
+      ),
+    ],
+  ),
+),
 
             const SizedBox(height: 20),
 
@@ -422,6 +436,64 @@ Future<void> triggerSOS() async {
           ],
         ),
       ),
+      bottomNavigationBar: Container(
+  decoration: BoxDecoration(
+    color: Colors.white,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.1),
+        blurRadius: 10,
+      ),
+    ],
+  ),
+  child: BottomNavigationBar(
+  type: BottomNavigationBarType.fixed,
+    backgroundColor: Colors.white,
+    selectedItemColor: Colors.red,
+    unselectedItemColor: Colors.grey,
+    currentIndex: 0,
+  onTap: (index) async {
+    if (index == 1) {
+      final prefs = await SharedPreferences.getInstance();
+
+      bool hasRequest = prefs.getBool("hasActiveRequest") ?? false;
+
+      if (!hasRequest) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No active request")),
+        );
+        return;
+      }
+
+      String phone = prefs.getString("requestPhone") ?? "";
+      double lat = prefs.getDouble("citizenLat") ?? 0;
+      double lng = prefs.getDouble("citizenLng") ?? 0;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CitizenRequestStatusPage(
+            phone: phone,
+            citizenLat: lat,
+            citizenLng: lng,
+          ),
+        ),
+      );
+    }
+  },
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home),
+      label: "Home",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.receipt_long),
+      label: "Request",
+    ),
+  ],
+),//hii
+  ),
+  ),
     );
   }
 }

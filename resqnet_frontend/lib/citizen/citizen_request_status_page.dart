@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'citizen_map_page.dart';
 
 class CitizenRequestStatusPage extends StatefulWidget {
@@ -76,9 +77,18 @@ class _CitizenRequestStatusPageState extends State<CitizenRequestStatusPage> {
 
         final newStatus = data["status"] ?? "pending";
 
-        if (newStatus =="assigned" || newStatus == "completed") {
-            timer?.cancel();
-          }
+        if (newStatus == "assigned" || newStatus == "completed") {
+  timer?.cancel();
+}
+
+// ✅ ADD THIS BELOW
+if (newStatus == "completed") {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove("hasActiveRequest");
+  await prefs.remove("requestPhone");
+  await prefs.remove("citizenLat");
+  await prefs.remove("citizenLng");
+}
 
           if(!mounted) return;
 
@@ -133,15 +143,49 @@ if (data["ambulance"]?["currentLocation"]?["coordinates"] != null) {
   Widget build(BuildContext context) {
 
     return WillPopScope(
-      onWillPop: () async => false,
-      child: Scaffold(
+  onWillPop: () async => false,
+  child: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color(0xFFA8DADC),
+          Color(0xFF80CBC4),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    ),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+        
 
-        appBar: AppBar(
-          title: const Text("Emergency Status"),
-          backgroundColor: Colors.red,
-        ),
+        body: Column(
+  children: [
 
-        body: Center(
+    /// SIMPLE HEADER
+    Padding(
+  padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+
+          const SizedBox(width: 24), // balance
+
+          const Text(
+            "Emergency Status",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(width: 24), // balance
+        ],
+      ),
+    ),
+
+    Expanded(
+      child: Center(
 
           child: loading || status.isEmpty
               ? const CircularProgressIndicator()
@@ -269,8 +313,12 @@ SizedBox(
                     ],
                   ),
                 ),
-        ),
       ),
+        ),
+  ],
+        ),
+      ),//hii
+  ),
     );
   }
 }

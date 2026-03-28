@@ -178,13 +178,57 @@ class _RegisterUserScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar:
-          AppBar(title: const Text("User Registration")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Container(
+    return Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFFD9F3F1),
+        Color(0xFF77C7C9),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
+      
+      body: SafeArea(
+  child: Column(
+    children: [
+
+      // 🔥 HEADER (FIXED)
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            const Expanded(
+              child: Text(
+                "User Registration",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 48),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 10),
+
+      // 🔥 SCROLL PART
+      Expanded(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -329,7 +373,12 @@ class _RegisterUserScreenState
             ),
           ),
         ),
+      ),//hii
       ),
+    ],
+  ),
+      ),
+  ),
     );
   }
 }
