@@ -1,4 +1,4 @@
-package com.example.resqnet_frontend
+package com.resqnet.app
 
 import io.flutter.embedding.android.FlutterActivity
 

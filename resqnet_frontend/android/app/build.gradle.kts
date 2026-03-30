@@ -5,22 +5,17 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")   // 🔥 REQUIRED FOR FIREBASE
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.resqnet_frontend"
+    namespace = "com.resqnet.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "23.1.7779620"
-    packaging {
-    jniLibs {
-        useLegacyPackaging = true
-    }
-}
+    ndkVersion = "27.0.12077973"
 
     androidResources {
-    noCompress += "tflite"
-}
+        noCompress += "tflite"
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -32,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.resqnet_frontend"
+        applicationId = "com.resqnet.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -40,32 +35,34 @@ android {
     }
 
     val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
-
-signingConfigs {
-    create("release") {
-        keyAlias = keystoreProperties["keyAlias"].toString()
-        keyPassword = keystoreProperties["keyPassword"].toString()
-        storeFile = file("upload-keystore.jks")   // ✅ ADD THIS LINE
-        storePassword = keystoreProperties["storePassword"].toString()
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
     }
-}
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"].toString()
+            keyPassword = keystoreProperties["keyPassword"].toString()
+            storeFile = file("upload-keystore.jks")
+            storePassword = keystoreProperties["storePassword"].toString()
+        }
+    }
 
     buildTypes {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
-            ndk {
-                debugSymbolLevel = "NONE"
+
+            packaging {
+                jniLibs {
+                    useLegacyPackaging = true
+                }
             }
         }
     }
-}  // ✅ ADD THIS (closing android)
+}
 
 flutter {
     source = "../.."
